@@ -2531,7 +2531,7 @@ async function handleRequest(req, res) {
       return;
     }
 
-    if ((url.pathname === "/quote.html" || url.pathname === "/schedule.html" || url.pathname === "/customers.html" || url.pathname === "/invoices.html" || url.pathname === "/crew.html" || url.pathname === "/reports.html" || url.pathname === "/profile.html") && !currentSession(req)) {
+    if ((url.pathname === "/quote.html" || url.pathname === "/schedule.html" || url.pathname === "/customers.html" || url.pathname === "/invoices.html" || url.pathname === "/crew.html" || url.pathname === "/reports.html" || url.pathname === "/profile.html" || url.pathname === "/more.html") && !currentSession(req)) {
       res.writeHead(302, {
         "Location": `/admin.html?next=${encodeURIComponent(url.pathname)}`,
         "Cache-Control": "no-store"

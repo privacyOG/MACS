@@ -17,6 +17,20 @@ function isAndroidApp() {
   return navigator.userAgent.includes("MACS-LawnQuote-Android");
 }
 
+async function clearClientSessionState() {
+  try {
+    for (const key of Object.keys(sessionStorage)) sessionStorage.removeItem(key);
+  } catch {
+  }
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((key) => key.startsWith("macs-lawnquote-")).map((key) => caches.delete(key)));
+    }
+  } catch {
+  }
+}
+
 export function startInactivityLogout(minutes = 30) {
   inactivityMinutes = Math.max(5, Math.min(240, Number(minutes || 30)));
   function resetTimer() {
@@ -66,6 +80,7 @@ export async function logoutAdmin() {
   try {
     await api("/api/auth/logout", {});
   } finally {
+    await clearClientSessionState();
     if (isAndroidApp()) {
       if (window.MacsAndroid?.logoutToLogin) {
         window.MacsAndroid.logoutToLogin();
@@ -83,6 +98,7 @@ export async function resetAndroidAppSession() {
   try {
     await api("/api/auth/logout", {});
   } finally {
+    await clearClientSessionState();
     if (window.MacsAndroid?.resetAppData) {
       window.MacsAndroid.resetAppData();
       return;
@@ -549,9 +565,13 @@ async function checkAndroidAppUpdate() {
 }
 
 export async function initAccessibleNavigation() {
+  const androidApp = isAndroidApp();
+  const currentPage = location.pathname.split("/").pop() || "index.html";
+  if (androidApp && currentPage === "admin.html") {
+    document.body.classList.add("login-only");
+  }
   const status = await authStatus();
   const user = status.user || null;
-  const androidApp = isAndroidApp();
   const currentAndroidVersion = androidAppVersion();
   document.body.dataset.androidApp = androidApp ? "true" : "false";
   document.body.dataset.androidAppVersion = currentAndroidVersion;
@@ -563,9 +583,9 @@ export async function initAccessibleNavigation() {
     document.documentElement.style.setProperty("--android-status-offset", "48px");
   }
   if (androidApp) checkAndroidAppUpdate();
-  const currentPage = location.pathname.split("/").pop() || "index.html";
   if (androidApp && !user && !["admin.html", "downloads.html"].includes(currentPage)) {
-    location.replace(`admin.html?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`);
+    await clearClientSessionState();
+    location.replace(`admin.html?android=1&loggedout=1&t=${Date.now()}`);
     return { status, user };
   }
   if (androidApp && user && !["crew.html", "schedule.html", "profile.html", "more.html", "downloads.html"].includes(currentPage)) {

@@ -1,26 +1,9 @@
-const CACHE_NAME = "macs-lawnquote-ui-v6";
+const CACHE_NAME = "macs-lawnquote-ui-v7";
 const CORE_ASSETS = [
-  "./",
-  "./index.html",
   "./offline.html",
   "./styles.css",
   "./auth.js",
-  "./home.js",
-  "./schedule.html",
-  "./schedule.js",
-  "./crew.html",
-  "./crew.js",
-  "./profile.html",
-  "./profile.js",
-  "./more.html",
-  "./more.js",
-  "./downloads.html",
-  "./downloads.js",
-  "./quote.html",
-  "./app.js",
-  "./manifest.webmanifest",
-  "./assets/macs-logo.jpg",
-  "./assets/lawn-mower.jpg"
+  "./manifest.webmanifest"
 ];
 
 self.addEventListener("install", (event) => {
@@ -48,12 +31,7 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          return response;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match("./offline.html")))
+        .catch(() => caches.match("./offline.html"))
     );
     return;
   }

@@ -19,6 +19,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
+import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
@@ -134,7 +135,8 @@ public class MainActivity extends Activity {
             }
         });
 
-        webView.loadUrl(APP_URL);
+        clearWebSession();
+        webView.loadUrl(LOGIN_URL + "?android=1&fresh=1&t=" + System.currentTimeMillis());
     }
 
     private boolean handleUrl(Uri uri) {
@@ -160,7 +162,7 @@ public class MainActivity extends Activity {
                 && !path.endsWith("/more.html")
                 && !path.endsWith("/downloads.html")
                 && !path.endsWith("/admin.html")) {
-                webView.loadUrl(APP_URL);
+                webView.loadUrl(LOGIN_URL + "?android=1&t=" + System.currentTimeMillis());
                 return true;
             }
         }
@@ -214,14 +216,20 @@ public class MainActivity extends Activity {
     private void clearWebSession() {
         try {
             CookieManager cookieManager = CookieManager.getInstance();
+            cookieManager.removeSessionCookies(null);
             cookieManager.removeAllCookies(null);
             cookieManager.flush();
+        } catch (Exception ignored) {
+        }
+        try {
+            WebStorage.getInstance().deleteAllData();
         } catch (Exception ignored) {
         }
         try {
             webView.clearCache(true);
             webView.clearFormData();
             webView.clearHistory();
+            webView.clearSslPreferences();
         } catch (Exception ignored) {
         }
     }
@@ -231,7 +239,7 @@ public class MainActivity extends Activity {
         public void logoutToLogin() {
             runOnUiThread(() -> {
                 clearWebSession();
-                webView.loadUrl(LOGIN_URL + "?logout=1&t=" + System.currentTimeMillis());
+                webView.loadUrl(LOGIN_URL + "?logout=1&android=1&t=" + System.currentTimeMillis());
             });
         }
 
@@ -239,7 +247,7 @@ public class MainActivity extends Activity {
         public void resetAppData() {
             runOnUiThread(() -> {
                 clearWebSession();
-                webView.loadUrl(LOGIN_URL + "?logout=1&reset=1&t=" + System.currentTimeMillis());
+                webView.loadUrl(LOGIN_URL + "?logout=1&reset=1&android=1&t=" + System.currentTimeMillis());
             });
         }
 
@@ -279,9 +287,9 @@ public class MainActivity extends Activity {
             + "section{max-width:420px;border:1px solid #d7d0c1;border-radius:8px;padding:18px;background:#fff;box-shadow:0 12px 36px rgba(41,35,24,.11)}"
             + "p{color:#66736b;font-weight:700;line-height:1.45}button{min-height:48px;border:0;border-radius:8px;background:#1f7a4f;color:white;font-weight:900;padding:0 18px}</style>"
             + "</head><body><main><section><p>MACS Field App</p><h1>Connection needed</h1>"
-            + "<p>The schedule could not load. Check mobile data or Wi-Fi, then retry.</p>"
-            + "<button onclick=\"location.href='" + APP_URL + "'\">Retry</button></section></main></body></html>";
-        webView.loadDataWithBaseURL(APP_URL, html, "text/html", "UTF-8", null);
+            + "<p>The login screen could not load. Check mobile data or Wi-Fi, then retry.</p>"
+            + "<button onclick=\"location.href='" + LOGIN_URL + "?android=1'\">Retry login</button></section></main></body></html>";
+        webView.loadDataWithBaseURL(LOGIN_URL, html, "text/html", "UTF-8", null);
     }
 
     private void useDarkSystemBarIcons(Window window) {

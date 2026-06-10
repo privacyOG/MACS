@@ -2,6 +2,31 @@ import { updateTeamProfile } from "./auth.js";
 
 const maxCredentialBytes = 2 * 1024 * 1024;
 
+export function formatAustralianDate(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const auMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (auMatch) {
+    const [, day, month, year] = auMatch;
+    return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
+  }
+  const isoMatch = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
+  }
+  return text;
+}
+
+function normalizeDateOfBirth(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const auMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!auMatch) return text;
+  const [, day, month, year] = auMatch;
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
 function fileSizeLabel(bytes) {
   const size = Number(bytes || 0);
   if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
@@ -11,6 +36,25 @@ function fileSizeLabel(bytes) {
 
 function credentialLabel(file) {
   return `${file.label || "Credential"} · ${file.filename || "File"} · ${fileSizeLabel(file.size)}`;
+}
+
+function openCredential(file) {
+  if (!file?.dataUrl) return;
+  const filename = file.filename || "credential";
+  const mimeType = file.mimeType || "application/octet-stream";
+  if (window.MacsAndroid?.openCredential) {
+    window.MacsAndroid.openCredential(file.dataUrl, filename, mimeType);
+    return;
+  }
+  const opened = window.open(file.dataUrl, "_blank", "noopener");
+  if (opened) return;
+  const download = document.createElement("a");
+  download.href = file.dataUrl;
+  download.download = filename;
+  download.rel = "noopener";
+  document.body.append(download);
+  download.click();
+  download.remove();
 }
 
 export function profileSummary(user = {}) {
@@ -45,13 +89,11 @@ export function renderCredentialList(list, credentials = [], { allowRemove = fal
     const actions = document.createElement("div");
     actions.className = "inline-actions";
     if (file.dataUrl) {
-      const view = document.createElement("a");
+      const view = document.createElement("button");
       view.className = "secondary-button";
-      view.href = file.dataUrl;
-      view.target = "_blank";
-      view.rel = "noopener";
-      view.download = file.filename || "credential";
+      view.type = "button";
       view.textContent = "View";
+      view.addEventListener("click", () => openCredential(file));
       actions.append(view);
     }
     if (allowRemove) {
@@ -99,7 +141,7 @@ export function employeeProfileFromForm(scope = document) {
   return {
     fullName: scope.querySelector("[data-profile-field='fullName']")?.value.trim() || "",
     address: scope.querySelector("[data-profile-field='address']")?.value.trim() || "",
-    dateOfBirth: scope.querySelector("[data-profile-field='dateOfBirth']")?.value || "",
+    dateOfBirth: normalizeDateOfBirth(scope.querySelector("[data-profile-field='dateOfBirth']")?.value || ""),
     mobile: scope.querySelector("[data-profile-field='mobile']")?.value.trim() || "",
     email: scope.querySelector("[data-profile-field='email']")?.value.trim() || ""
   };
@@ -136,7 +178,7 @@ export async function openEmployeeProfileEditor(user, { currentUser, onSaved, se
           </label>
           <label>
             D.O.B
-            <input data-profile-field="dateOfBirth" type="date" />
+            <input data-profile-field="dateOfBirth" inputmode="numeric" placeholder="dd/mm/yyyy" />
           </label>
         </div>
         <label>
@@ -172,7 +214,7 @@ export async function openEmployeeProfileEditor(user, { currentUser, onSaved, se
   dialog.querySelector("[data-profile-field='fullName']").value = profile.fullName || "";
   dialog.querySelector("[data-profile-field='mobile']").value = profile.mobile || "";
   dialog.querySelector("[data-profile-field='email']").value = profile.email || user.email || "";
-  dialog.querySelector("[data-profile-field='dateOfBirth']").value = profile.dateOfBirth || "";
+  dialog.querySelector("[data-profile-field='dateOfBirth']").value = formatAustralianDate(profile.dateOfBirth);
   dialog.querySelector("[data-profile-field='address']").value = profile.address || "";
   const list = dialog.querySelector("[data-credential-list]");
   const refreshCredentials = () => renderCredentialList(list, credentials, {

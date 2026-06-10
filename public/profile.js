@@ -6,7 +6,7 @@ import {
   updateProfileContact,
   updateProfileCredentials
 } from "./auth.js";
-import { setupCredentialDraft } from "./team-profile.js";
+import { formatAustralianDate, setupCredentialDraft } from "./team-profile.js";
 
 const role = document.querySelector("#profile-role");
 const summary = document.querySelector("#profile-summary");
@@ -46,7 +46,7 @@ function renderProfile(user) {
   summary.replaceChildren();
   addStat("Name", profile.fullName);
   addStat("Address", profile.address);
-  addStat("D.O.B", profile.dateOfBirth);
+  addStat("D.O.B", formatAustralianDate(profile.dateOfBirth));
   addStat("Mobile", profile.mobile);
   addStat("Email", profile.email || user.email);
   addStat("Credentials", `${profile.credentialCount || 0} on file`);

@@ -58,8 +58,16 @@ export async function requireAdminSession() {
 }
 
 export async function logoutAdmin() {
-  await api("/api/auth/logout", {});
-  location.href = "admin.html";
+  clearTimeout(inactivityTimer);
+  try {
+    await api("/api/auth/logout", {});
+  } finally {
+    if (navigator.userAgent.includes("MACS-LawnQuote-Android")) {
+      location.replace(`admin.html?logout=1&t=${Date.now()}`);
+    } else {
+      location.replace("admin.html");
+    }
+  }
 }
 
 export async function setupAdmin(password, twoFactorCode = "") {
@@ -288,7 +296,10 @@ export async function adminSecurityStatus() {
 
 export function canAccessPage(user, page) {
   const isAndroidApp = navigator.userAgent.includes("MACS-LawnQuote-Android");
-  if (isAndroidApp) return ["schedule", "crew", "profile", "downloads"].includes(page);
+  if (isAndroidApp) {
+    if (!user) return ["admin", "downloads"].includes(page);
+    return ["schedule", "crew", "profile", "downloads"].includes(page);
+  }
   if (page === "home") return true;
   if (page === "downloads") return true;
   if (!user) return ["admin", "schedule", "quote"].includes(page);
@@ -488,6 +499,10 @@ export async function initAccessibleNavigation() {
   }
   if (isAndroidApp) checkAndroidAppUpdate();
   const currentPage = location.pathname.split("/").pop() || "index.html";
+  if (isAndroidApp && !user && !["admin.html", "downloads.html"].includes(currentPage)) {
+    location.replace(`admin.html?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`);
+    return { status, user };
+  }
   if (isAndroidApp && user && !["schedule.html", "crew.html", "profile.html", "downloads.html"].includes(currentPage)) {
     location.replace("schedule.html");
     return { status, user };

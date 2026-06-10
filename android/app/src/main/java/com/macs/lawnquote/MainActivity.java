@@ -2,16 +2,19 @@ package com.macs.lawnquote;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import android.webkit.GeolocationPermissions;
+import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -19,6 +22,10 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceError;
+import androidx.core.content.FileProvider;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
     private static final String APP_URL = "https://macs.rctrusts.com/schedule.html";
@@ -63,6 +70,7 @@ public class MainActivity extends Activity {
         settings.setGeolocationEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setUserAgentString(settings.getUserAgentString() + " MACS-LawnQuote-Android/" + appVersionName());
+        webView.addJavascriptInterface(new AndroidBridge(), "MacsAndroid");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -79,6 +87,13 @@ public class MainActivity extends Activity {
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && request.isForMainFrame()) {
                     showOfflineScreen();
+                }
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                if (url != null && url.contains("admin.html") && url.contains("logout=1")) {
+                    view.clearHistory();
                 }
             }
         });
@@ -116,11 +131,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        if (savedInstanceState == null) {
-            webView.loadUrl(APP_URL);
-        } else {
-            webView.restoreState(savedInstanceState);
-        }
+        webView.loadUrl(APP_URL);
     }
 
     private boolean handleUrl(Uri uri) {
@@ -141,7 +152,9 @@ public class MainActivity extends Activity {
                 return true;
             }
             if (!path.endsWith("/schedule.html")
+                && !path.endsWith("/crew.html")
                 && !path.endsWith("/profile.html")
+                && !path.endsWith("/downloads.html")
                 && !path.endsWith("/admin.html")) {
                 webView.loadUrl(APP_URL);
                 return true;
@@ -155,6 +168,64 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             startActivity(intent);
         } catch (Exception ignored) {
+        }
+    }
+
+    private void openExternalFile(Uri uri, String mimeType, String filename) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, safeMimeType(mimeType, filename));
+            intent.setClipData(ClipData.newUri(getContentResolver(), filename, uri));
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Intent chooser = Intent.createChooser(intent, "Open credential");
+            chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(chooser);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String safeMimeType(String mimeType, String filename) {
+        String value = mimeType == null ? "" : mimeType.trim();
+        if (!value.isEmpty() && !"file".equalsIgnoreCase(value)) return value;
+        String lower = filename == null ? "" : filename.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(".pdf")) return "application/pdf";
+        if (lower.endsWith(".png")) return "image/png";
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+        if (lower.endsWith(".webp")) return "image/webp";
+        return "application/octet-stream";
+    }
+
+    private String safeFilename(String filename, String mimeType) {
+        String cleaned = filename == null ? "" : filename.replaceAll("[^A-Za-z0-9._-]", "_");
+        if (cleaned.isEmpty()) cleaned = "credential";
+        if (cleaned.contains(".")) return cleaned;
+        String type = safeMimeType(mimeType, cleaned);
+        if ("application/pdf".equals(type)) return cleaned + ".pdf";
+        if ("image/png".equals(type)) return cleaned + ".png";
+        if ("image/webp".equals(type)) return cleaned + ".webp";
+        if ("image/jpeg".equals(type)) return cleaned + ".jpg";
+        return cleaned + ".bin";
+    }
+
+    public class AndroidBridge {
+        @JavascriptInterface
+        public void openCredential(String dataUrl, String filename, String mimeType) {
+            if (dataUrl == null || !dataUrl.startsWith("data:")) return;
+            int comma = dataUrl.indexOf(',');
+            if (comma < 0) return;
+            try {
+                String encoded = dataUrl.substring(comma + 1);
+                byte[] bytes = Base64.decode(encoded, Base64.DEFAULT);
+                File directory = new File(getCacheDir(), "credentials");
+                if (!directory.exists() && !directory.mkdirs()) return;
+                File output = new File(directory, safeFilename(filename, mimeType));
+                try (FileOutputStream stream = new FileOutputStream(output)) {
+                    stream.write(bytes);
+                }
+                Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".files", output);
+                runOnUiThread(() -> openExternalFile(uri, mimeType, output.getName()));
+            } catch (Exception ignored) {
+            }
         }
     }
 

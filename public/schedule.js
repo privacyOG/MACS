@@ -403,6 +403,25 @@ async function refreshRoster() {
   rosterJobs = result.ok ? result.jobs : [];
 }
 
+/**
+ * Animate a numeric element from `from` to `to` over ~duration ms
+ * using requestAnimationFrame with easing.
+ */
+function animateCounter(element, from, to, duration = 600) {
+  const start = performance.now();
+  const delta = to - from;
+
+  function tick(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease-out quad for snappy feel
+    const eased = 1 - (1 - progress) * (1 - progress);
+    element.textContent = Math.round(from + delta * eased);
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
 function renderStats() {
   const savedQuotes = quotes();
   const savedRecurring = recurringJobs();
@@ -418,8 +437,16 @@ function renderStats() {
   ]) {
     const card = document.createElement("article");
     card.className = "dashboard-stat";
-    card.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
+    card.innerHTML = `<span>${label}</span><strong>0</strong>`;
     statsPanel.append(card);
+
+    // Animate counter up from 0 to target value
+    const strongEl = card.querySelector("strong");
+    if (value > 0) {
+      animateCounter(strongEl, 0, value, 600);
+    } else {
+      strongEl.textContent = "0";
+    }
   }
 }
 

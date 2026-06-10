@@ -1682,6 +1682,12 @@ body[data-android-app="true"] .menu-toggle {
   border: 1px solid #dce4d8;
   border-radius: 8px;
   background: #f2f8ef;
+  animation: stat-fade-in 0.35s ease both;
+}
+
+@keyframes stat-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .dashboard-stat span {

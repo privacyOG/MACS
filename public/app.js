@@ -7,6 +7,7 @@ await initAccessibleNavigation();
 
 const STORAGE_KEY = "lawnquote.history.v1";
 const SETTINGS_KEY = "lawnquote.settings.v1";
+const quoteStepLinks = [...document.querySelectorAll(".quote-stepper a")];
 
 const factors = {
   grassHeight: { regular: 1, long: 1.25, overgrown: 1.65 },
@@ -785,6 +786,27 @@ function renderHistory() {
   }));
 }
 
+function setupQuoteStepper() {
+  if (!quoteStepLinks.length || !("IntersectionObserver" in window)) return;
+  const sections = quoteStepLinks
+    .map((link) => document.querySelector(link.getAttribute("href")))
+    .filter(Boolean);
+  const observer = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+    if (!visible) return;
+    const id = `#${visible.target.id}`;
+    for (const link of quoteStepLinks) {
+      const active = link.getAttribute("href") === id;
+      link.classList.toggle("is-active", active);
+      if (active) link.setAttribute("aria-current", "step");
+      else link.removeAttribute("aria-current");
+    }
+  }, { rootMargin: "-20% 0px -55% 0px", threshold: [0.25, 0.55] });
+  for (const section of sections) observer.observe(section);
+}
+
 async function saveQuote() {
   const quote = calculate();
   const history = quoteHistory.slice();
@@ -984,6 +1006,7 @@ window.addEventListener("resize", () => {
 });
 
 detectDevice();
+setupQuoteStepper();
 loadSettings();
 createZone({ name: "Front lawn", length: 10, width: 6, edging: 18 });
 createZone({ name: "Back lawn", length: 12, width: 8, edging: 24 });

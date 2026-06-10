@@ -16,6 +16,11 @@
   --admin-max: 1280px;
   --page-gutter: clamp(0.75rem, 2vw, 1rem);
   --tap-target: 2.75rem;
+  --status-draft: #66736b;
+  --status-scheduled: #326d92;
+  --status-progress: #c98a24;
+  --status-approval: #b9493c;
+  --status-done: #1f7a4f;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -42,6 +47,38 @@ body {
     var(--bg);
   background-size: 28px 28px;
   color: var(--ink);
+}
+
+body[data-outdoor-mode="true"] {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --ink: #07110c;
+  --muted: #2f3f36;
+  --line: #9ba89f;
+  --shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+}
+
+body[data-outdoor-mode="true"] .admin-card,
+body[data-outdoor-mode="true"] .form-section,
+body[data-outdoor-mode="true"] .result-card,
+body[data-outdoor-mode="true"] .ops-panel,
+body[data-outdoor-mode="true"] .route-job,
+body[data-outdoor-mode="true"] .crew-job,
+body[data-outdoor-mode="true"] .calendar-job {
+  border-color: #6d7c72;
+  background: #ffffff;
+}
+
+body[data-outdoor-mode="true"] .primary-button,
+body[data-outdoor-mode="true"] .secondary-button,
+body[data-outdoor-mode="true"] .ghost-button,
+body[data-outdoor-mode="true"] input,
+body[data-outdoor-mode="true"] select,
+body[data-outdoor-mode="true"] textarea {
+  min-height: 3rem;
+  font-weight: 900;
 }
 
 button,
@@ -754,6 +791,271 @@ h2 {
   flex-wrap: wrap;
   justify-content: flex-end;
   min-width: 0;
+}
+
+.mobile-bottom-nav {
+  position: fixed;
+  right: 0.65rem;
+  bottom: calc(0.65rem + env(safe-area-inset-bottom, 0px));
+  left: 0.65rem;
+  z-index: 35;
+  display: none;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.35rem;
+  padding: 0.42rem;
+  border: 1px solid rgba(31, 122, 79, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 253, 247, 0.96);
+  box-shadow: 0 18px 46px rgba(22, 35, 29, 0.22);
+  backdrop-filter: blur(16px);
+}
+
+.mobile-bottom-nav a {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.12rem;
+  min-height: 3.15rem;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.mobile-bottom-nav a span {
+  display: grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  color: var(--green);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.mobile-bottom-nav a.is-active {
+  background: var(--green);
+  color: #ffffff;
+}
+
+.mobile-bottom-nav a.is-active span {
+  color: #ffffff;
+}
+
+.outdoor-mode-toggle {
+  position: fixed;
+  right: 0.85rem;
+  bottom: calc(4.65rem + env(safe-area-inset-bottom, 0px));
+  z-index: 36;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.45rem;
+  padding: 0 0.75rem;
+  border: 1px solid rgba(31, 122, 79, 0.32);
+  border-radius: 8px;
+  background: #fffdf7;
+  color: var(--green-dark);
+  box-shadow: 0 10px 26px rgba(22, 35, 29, 0.16);
+  font-weight: 900;
+}
+
+.outdoor-mode-toggle[aria-pressed="true"] {
+  background: #0f422a;
+  color: #ffffff;
+}
+
+.app-chip-row,
+.dashboard-action-grid,
+.role-dashboard-grid {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.app-chip-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.app-chip,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.85rem;
+  width: fit-content;
+  padding: 0.25rem 0.55rem;
+  border-radius: 8px;
+  background: #eef5ea;
+  color: var(--green-dark);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.status-badge[data-status*="assigned"],
+.status-badge[data-status*="scheduled"] {
+  background: #e8f1f7;
+  color: var(--status-scheduled);
+}
+
+.status-badge[data-status*="pending"],
+.status-badge[data-status*="completed_pending_approval"] {
+  background: #fff0df;
+  color: #8a520d;
+}
+
+.status-badge[data-status*="approved"],
+.status-badge[data-status*="completed"] {
+  background: #e7f5e8;
+  color: var(--status-done);
+}
+
+.status-badge[data-status*="completed_pending_approval"] {
+  background: #fff0df;
+  color: #8a520d;
+}
+
+.status-badge[data-status*="rejected"],
+.status-badge[data-status*="archived"] {
+  background: #fae9e6;
+  color: var(--status-approval);
+}
+
+.dashboard-action-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dashboard-action {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 7.2rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.dashboard-action span {
+  color: var(--green);
+  font-size: 0.75rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.dashboard-action strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.dashboard-action small {
+  color: var(--muted);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.quote-stepper {
+  position: sticky;
+  top: calc(5.4rem + 0.75rem);
+  z-index: 6;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-bottom: 0.75rem;
+  padding: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 253, 247, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+.quote-stepper a {
+  display: grid;
+  align-content: center;
+  gap: 0.12rem;
+  min-height: 3rem;
+  padding: 0.45rem;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.quote-stepper a span {
+  color: var(--green);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.quote-stepper a.is-active {
+  background: var(--green);
+  color: #ffffff;
+}
+
+.quote-stepper a.is-active span {
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.form-section[data-step] {
+  scroll-margin-top: 8rem;
+}
+
+.timeline-route {
+  position: relative;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.timeline-route::before {
+  content: "";
+  position: absolute;
+  top: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  width: 2px;
+  background: #cdd9cf;
+}
+
+.timeline-route .route-job,
+.timeline-route .crew-job {
+  position: relative;
+  margin-left: 0.35rem;
+}
+
+.route-job-main .job-meta-row {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.calendar-job,
+.route-job,
+.crew-job,
+.schedule-item {
+  border-left: 0.35rem solid var(--status-scheduled);
+}
+
+.calendar-job[data-status*="completed_pending_approval"],
+.route-job[data-status*="completed_pending_approval"],
+.crew-job[data-status*="completed_pending_approval"],
+.schedule-item[data-status*="completed_pending_approval"] {
+  border-left-color: var(--status-progress);
+}
+
+.calendar-job[data-status*="approved"],
+.route-job[data-status*="approved"],
+.crew-job[data-status*="approved"],
+.schedule-item[data-status*="approved"] {
+  border-left-color: var(--status-done);
+}
+
+.calendar-job[data-status*="archived"],
+.route-job[data-status*="archived"],
+.crew-job[data-status*="archived"],
+.schedule-item[data-status*="archived"],
+.calendar-job[data-status*="rejected"],
+.route-job[data-status*="rejected"],
+.crew-job[data-status*="rejected"],
+.schedule-item[data-status*="rejected"] {
+  border-left-color: var(--status-approval);
 }
 
 .menu-toggle {
@@ -2075,6 +2377,18 @@ select:focus {
 }
 
 @media (max-width: 860px) {
+  body {
+    padding-bottom: calc(4.8rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-bottom-nav {
+    display: grid;
+  }
+
+  .outdoor-mode-toggle {
+    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
   .topbar {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -2201,6 +2515,22 @@ select:focus {
   .hero-actions a,
   .quote-entry .primary-button {
     width: 100%;
+  }
+
+  .dashboard-action-grid,
+  .app-chip-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quote-stepper {
+    top: 0.5rem;
+    grid-template-columns: repeat(5, minmax(4.8rem, 1fr));
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .quote-stepper a {
+    min-width: 4.8rem;
   }
 
   .site-nav nav {
@@ -2375,6 +2705,24 @@ select:focus {
   .ghost-button,
   .danger-button {
     min-height: 2.85rem;
+  }
+
+  .mobile-bottom-nav strong {
+    font-size: 0.64rem;
+  }
+
+  .mobile-bottom-nav a {
+    min-height: 3rem;
+  }
+
+  .outdoor-mode-toggle {
+    right: 0.65rem;
+    min-width: 2.7rem;
+    padding: 0 0.6rem;
+  }
+
+  .outdoor-mode-toggle strong {
+    display: none;
   }
 
   .home-hero {

@@ -288,7 +288,7 @@ export async function adminSecurityStatus() {
 
 export function canAccessPage(user, page) {
   const isAndroidApp = navigator.userAgent.includes("MACS-LawnQuote-Android");
-  if (isAndroidApp) return ["schedule", "profile"].includes(page);
+  if (isAndroidApp) return ["schedule", "crew", "profile", "downloads"].includes(page);
   if (page === "home") return true;
   if (page === "downloads") return true;
   if (!user) return ["admin", "schedule", "quote"].includes(page);
@@ -302,6 +302,65 @@ export function canAccessPage(user, page) {
   if (page === "reports") return user.role === "owner" || user.role === "leader";
   if (page === "invoices") return user.role === "owner" || user.role === "leader";
   return true;
+}
+
+const navItems = [
+  { page: "home", href: "index.html", icon: "⌂", label: "Home" },
+  { page: "quote", href: "quote.html", icon: "+", label: "Quote" },
+  { page: "schedule", href: "schedule.html", icon: "▦", label: "Schedule" },
+  { page: "crew", href: "crew.html", icon: "◉", label: "Crew" },
+  { page: "profile", href: "profile.html", icon: "◎", label: "Profile" }
+];
+
+function currentPageKey() {
+  const page = location.pathname.split("/").pop() || "index.html";
+  if (page === "index.html") return "home";
+  return page.replace(/\.html$/, "") || "home";
+}
+
+function setupBottomNavigation(user) {
+  if (document.querySelector(".mobile-bottom-nav")) return;
+  const nav = document.createElement("nav");
+  nav.className = "mobile-bottom-nav";
+  nav.setAttribute("aria-label", "Primary app navigation");
+  const activePage = currentPageKey();
+  for (const item of navItems) {
+    if (!canAccessPage(user, item.page)) continue;
+    const link = document.createElement("a");
+    link.href = item.href;
+    link.dataset.page = item.page;
+    link.className = item.page === activePage ? "is-active" : "";
+    link.setAttribute("aria-label", item.label);
+    if (item.page === activePage) link.setAttribute("aria-current", "page");
+    link.innerHTML = `<span aria-hidden="true">${item.icon}</span><strong>${item.label}</strong>`;
+    nav.append(link);
+  }
+  if (nav.children.length) document.body.append(nav);
+}
+
+function setupOutdoorModeToggle() {
+  if (document.querySelector(".outdoor-mode-toggle")) return;
+  const enabled = localStorage.getItem("macs.outdoorMode") === "1";
+  document.body.dataset.outdoorMode = enabled ? "true" : "false";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "outdoor-mode-toggle";
+  button.setAttribute("aria-pressed", String(enabled));
+  button.setAttribute("aria-label", "Toggle outdoor mode");
+  button.innerHTML = `<span aria-hidden="true">☼</span><strong>${enabled ? "Outdoor on" : "Outdoor"}</strong>`;
+  button.addEventListener("click", () => {
+    const next = document.body.dataset.outdoorMode !== "true";
+    document.body.dataset.outdoorMode = next ? "true" : "false";
+    localStorage.setItem("macs.outdoorMode", next ? "1" : "0");
+    button.setAttribute("aria-pressed", String(next));
+    button.querySelector("strong").textContent = next ? "Outdoor on" : "Outdoor";
+  });
+  document.body.append(button);
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.register("./service-worker.js").catch(() => {});
 }
 
 function setupResponsiveNavigationMenus() {
@@ -429,7 +488,7 @@ export async function initAccessibleNavigation() {
   }
   if (isAndroidApp) checkAndroidAppUpdate();
   const currentPage = location.pathname.split("/").pop() || "index.html";
-  if (isAndroidApp && user && !["schedule.html", "profile.html"].includes(currentPage)) {
+  if (isAndroidApp && user && !["schedule.html", "crew.html", "profile.html", "downloads.html"].includes(currentPage)) {
     location.replace("schedule.html");
     return { status, user };
   }
@@ -446,5 +505,8 @@ export async function initAccessibleNavigation() {
     element.textContent = user ? `${user.username} · ${user.roleLabel}` : "Login required";
   }
   setupResponsiveNavigationMenus();
+  setupBottomNavigation(user);
+  setupOutdoorModeToggle();
+  registerServiceWorker();
   return { status, user };
 }

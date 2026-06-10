@@ -129,6 +129,10 @@ function statusLabel(status) {
   return labels[status] || status || "Active";
 }
 
+function statusBadge(status) {
+  return `<span class="status-badge" data-status="${escapeAttribute(status || "active")}">${statusLabel(status)}</span>`;
+}
+
 function teamLabel(id) {
   if (!id) return "Unassigned";
   const user = teamUsers.find((item) => item.id === id || item.username === id);
@@ -842,12 +846,14 @@ function renderWeekCalendar() {
     for (const job of jobs) {
       const card = document.createElement("div");
       card.className = "calendar-job";
+      card.dataset.status = job.status || "assigned";
       card.innerHTML = `
         <strong>${job.title || job.address || "Roster job"}</strong>
         <span>${job.startTime} - ${job.finishTime}</span>
         <small>${canManage() ? `${job.assignedUsername || teamLabel(job.assignedTo)} · ` : ""}${job.address || "No address"}</small>
         <small>${customerContactLabel(job)}</small>
-        <small>${job.sourceType === "recurring" ? `Recurring ${job.frequency || ""}` : "One-off"} · ${statusLabel(job.status)}</small>
+        <small>${job.sourceType === "recurring" ? `Recurring ${job.frequency || ""}` : "One-off"}</small>
+        ${statusBadge(job.status)}
       `;
       if (canManage()) {
         const del = document.createElement("button");
@@ -999,16 +1005,23 @@ function renderRouteDayList() {
     routeDayList.innerHTML = `<p class="empty-state">No jobs scheduled for ${dateLabel(preferredDay)}.</p>`;
     return;
   }
+  routeDayList.classList.add("timeline-route");
   routeDayList.replaceChildren(...jobs.map((job, index) => {
     const item = document.createElement("article");
     item.className = "route-job";
+    item.dataset.status = job.status || "assigned";
     const sms = smsUrl(job);
     item.innerHTML = `
       <div class="route-index">${index + 1}</div>
       <div class="route-job-main">
         <strong>${job.title || job.address || "Roster job"}</strong>
         <span>${job.startTime || "No start"}-${job.finishTime || "No finish"} · ${job.address || "No address"}</span>
-        <small>${customerContactLabel(job)} · ${statusLabel(job.status)} · ${job.actualMinutes ? minutesLabel(job.actualMinutes) : "No time logged"} · ${materialSummary(job)}</small>
+        <div class="job-meta-row">
+          ${statusBadge(job.status)}
+          <span class="app-chip">${job.actualMinutes ? minutesLabel(job.actualMinutes) : "No time logged"}</span>
+          <span class="app-chip">${materialSummary(job)}</span>
+        </div>
+        <small>${customerContactLabel(job)}</small>
       </div>
       <div class="route-job-actions">
         <a class="secondary-button compact-button" href="${mapUrl(job.address)}" target="_blank" rel="noreferrer">Map</a>
@@ -1035,11 +1048,13 @@ function renderRecurringList() {
   recurringList.replaceChildren(...jobs.map((job) => {
     const item = document.createElement("article");
     item.className = "admin-list-item schedule-item";
+    item.dataset.status = job.status || "active";
     item.innerHTML = `
       <div>
         <strong>${job.customerName || job.address || "Unnamed recurring job"}</strong>
-        <span>${job.address || "No address"} · ${dateLabel(job.nextRun)} · ${job.startTime || "No start"}-${job.finishTime || "No finish"} · ${job.frequency || "weekly"} · ${teamLabel(job.assignedTo)} · ${statusLabel(job.status)}</span>
+        <span>${job.address || "No address"} · ${dateLabel(job.nextRun)} · ${job.startTime || "No start"}-${job.finishTime || "No finish"} · ${job.frequency || "weekly"} · ${teamLabel(job.assignedTo)}</span>
         <span>${customerContactLabel(job)}</span>
+        ${statusBadge(job.status)}
       </div>
     `;
     const controls = completionControls(job, "recurring");
@@ -1076,11 +1091,13 @@ function renderQuoteScheduleList() {
   quoteScheduleList.replaceChildren(...savedQuotes.map((quote) => {
     const item = document.createElement("article");
     item.className = "admin-list-item schedule-item";
+    item.dataset.status = quote.status || "pending";
     item.innerHTML = `
       <div>
         <strong>${quote.customerName || quote.address || "Unnamed quote"}</strong>
-        <span>${quote.address || "No address"} · ${money(quote.price)} · ${dateLabel(quote.scheduledDate)} · ${quote.startTime || "No start"}-${quote.finishTime || "No finish"} · ${teamLabel(quote.assignedTo)} · ${statusLabel(quote.status || "pending")}</span>
+        <span>${quote.address || "No address"} · ${money(quote.price)} · ${dateLabel(quote.scheduledDate)} · ${quote.startTime || "No start"}-${quote.finishTime || "No finish"} · ${teamLabel(quote.assignedTo)}</span>
         <span>${customerContactLabel(quote)}</span>
+        ${statusBadge(quote.status || "pending")}
       </div>
     `;
     const controls = completionControls(quote, "quote");

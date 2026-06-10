@@ -18,6 +18,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceError;
 
 public class MainActivity extends Activity {
     private static final String APP_URL = "https://macs.rctrusts.com/schedule.html";
@@ -72,6 +73,13 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 return handleUrl(Uri.parse(url));
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && request.isForMainFrame()) {
+                    showOfflineScreen();
+                }
             }
         });
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> openExternal(Uri.parse(url)));
@@ -156,6 +164,18 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {
             return "0";
         }
+    }
+
+    private void showOfflineScreen() {
+        String html = "<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'>"
+            + "<style>body{margin:0;font-family:sans-serif;background:#fffdf7;color:#17231d}"
+            + "main{min-height:100vh;display:grid;place-items:center;padding:24px}"
+            + "section{max-width:420px;border:1px solid #d7d0c1;border-radius:8px;padding:18px;background:#fff;box-shadow:0 12px 36px rgba(41,35,24,.11)}"
+            + "p{color:#66736b;font-weight:700;line-height:1.45}button{min-height:48px;border:0;border-radius:8px;background:#1f7a4f;color:white;font-weight:900;padding:0 18px}</style>"
+            + "</head><body><main><section><p>MACS Field App</p><h1>Connection needed</h1>"
+            + "<p>The schedule could not load. Check mobile data or Wi-Fi, then retry.</p>"
+            + "<button onclick=\"location.href='" + APP_URL + "'\">Retry</button></section></main></body></html>";
+        webView.loadDataWithBaseURL(APP_URL, html, "text/html", "UTF-8", null);
     }
 
     private void useDarkSystemBarIcons(Window window) {

@@ -1,6 +1,7 @@
 import { authStatus, completeRosterJob, initAccessibleNavigation, listRosterJobs, logoutAdmin, requireAdminSession, saveRosterWorklog } from "./auth.js";
 
 const crewList = document.querySelector("#crew-list");
+const routeSummary = document.querySelector("#crew-route-summary");
 const logoutButton = document.querySelector("#logout-admin");
 
 let currentUser = null;
@@ -25,6 +26,20 @@ function smsUrl(job) {
   const phone = String(job.customerPhone || job.phone || job.mobile || "").replace(/\s+/g, "");
   const body = encodeURIComponent(`Hi ${job.customerName || "there"}, this is MACS. We are on our way to your property now.`);
   return phone ? `sms:${phone}?&body=${body}` : "";
+}
+
+function statusLabel(status) {
+  const labels = {
+    assigned: "Assigned",
+    completed_pending_approval: "Awaiting approval",
+    approved: "Approved",
+    completed: "Completed"
+  };
+  return labels[status] || status || "Assigned";
+}
+
+function statusBadge(status) {
+  return `<span class="status-badge" data-status="${String(status || "assigned").replace(/[&<>"']/g, "")}">${statusLabel(status)}</span>`;
 }
 
 function canSee(job) {
@@ -73,11 +88,16 @@ function renderCrewJobs() {
   const jobs = visibleJobs();
   if (!jobs.length) {
     crewList.innerHTML = `<p class="empty-state">No upcoming assigned jobs.</p>`;
+    routeSummary.textContent = "No pricing visible in crew mode";
     return;
   }
+  crewList.classList.add("timeline-route");
+  const todayCount = jobs.filter((job) => job.scheduledDate === dateValue(new Date())).length;
+  routeSummary.textContent = `${todayCount} today · ${jobs.length} upcoming · no pricing visible`;
   crewList.replaceChildren(...jobs.map((job, index) => {
     const item = document.createElement("article");
     item.className = "crew-job";
+    item.dataset.status = job.status || "assigned";
     const sms = smsUrl(job);
     item.innerHTML = `
       <div class="route-index">${index + 1}</div>
@@ -86,7 +106,11 @@ function renderCrewJobs() {
         <span>${dateLabel(job.scheduledDate)} · ${job.startTime || "No start"}-${job.finishTime || "No finish"}</span>
         <small>${job.address || "No address"}</small>
         <small>${[job.customerName || "", job.customerPhone || "", job.customerEmail || ""].filter(Boolean).join(" · ") || "No customer contact saved"}</small>
-        <small>${job.actualStartTime ? `Checked in ${job.actualStartTime}` : "Not checked in"}${job.actualFinishTime ? ` · Completed ${job.actualFinishTime}` : ""}</small>
+        <div class="job-meta-row">
+          ${statusBadge(job.status)}
+          <span class="app-chip">${job.actualStartTime ? `Checked in ${job.actualStartTime}` : "Not checked in"}</span>
+          <span class="app-chip">${job.actualFinishTime ? `Completed ${job.actualFinishTime}` : "Open"}</span>
+        </div>
       </div>
       <div class="crew-actions">
         <a class="secondary-button compact-button" href="${mapUrl(job.address)}" target="_blank" rel="noreferrer">Route</a>

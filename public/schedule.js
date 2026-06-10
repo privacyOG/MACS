@@ -40,6 +40,7 @@ const routeDayList = document.querySelector("#route-day-list");
 const previousWeekButton = document.querySelector("#prev-week");
 const nextWeekButton = document.querySelector("#next-week");
 const todayWeekButton = document.querySelector("#today-week");
+const todayFab = document.querySelector("#today-fab");
 
 let currentUser = null;
 let teamUsers = [];
@@ -1226,6 +1227,14 @@ todayWeekButton.addEventListener("click", () => {
   weekStart = startOfWeek(new Date());
   renderWeekCalendar();
 });
+
+// Floating Today FAB — mirrors the "This week" button, visible on mobile only
+if (todayFab) {
+  todayFab.addEventListener("click", () => {
+    weekStart = startOfWeek(new Date());
+    renderWeekCalendar();
+  });
+}
 
 document.querySelector("#reset-recurring").addEventListener("click", resetRecurringForm);
 document.querySelector("#logout-admin").addEventListener("click", () => {

@@ -1714,6 +1714,52 @@ body[data-android-app="true"] .menu-toggle {
 
 .week-toolbar button {
   min-width: 2.4rem;
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.week-toolbar button:active {
+  transform: scale(0.92);
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.15);
+}
+
+/* Floating Today quick-jump button — visible on mobile only */
+.today-fab {
+  position: fixed;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  right: 1.2rem;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(38,52,38,0.35);
+  z-index: 998;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+@media (min-width: 861px) {
+  .today-fab { display: none; }
+}
+
+.today-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(38,52,38,0.45);
+}
+
+.today-fab:active {
+  transform: scale(0.95);
+}
+
+.today-fab svg {
+  width: 1.3rem;
+  height: 1.3rem;
 }
 
 .week-calendar {
@@ -2633,6 +2679,43 @@ select:focus {
 
   .roster-assignment {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Tablet breakpoint — collapse top nav into hamburger at 1024px */
+@media (max-width: 1024px) {
+  .menu-toggle {
+    display: inline-flex;
+  }
+
+  .top-actions:not(.responsive-menu):not(.is-open) {
+    display: none !important;
+  }
+
+  .top-actions.responsive-menu,
+  .site-nav nav.responsive-menu {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: max-height 0.2s ease, opacity 0.16s ease, padding 0.16s ease, visibility 0.16s ease;
+  }
+
+  .top-actions.responsive-menu.is-open,
+  .site-nav nav.responsive-menu.is-open {
+    max-height: min(72svh, 34rem);
+    overflow-y: auto;
+    padding-top: 0.55rem;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .top-actions .action-link,
+  .top-actions button {
+    width: 100%;
+    padding-inline: 0.65rem;
+    text-align: center;
   }
 }
 

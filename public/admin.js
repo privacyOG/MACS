@@ -69,6 +69,7 @@ const teamCredentialLabel = document.querySelector("#team-credential-label");
 const teamCredentialFile = document.querySelector("#team-credential-file");
 const addTeamCredential = document.querySelector("#add-team-credential");
 const teamCredentialList = document.querySelector("#team-credential-list");
+const topActions = document.querySelector(".top-actions");
 
 let currentUser = null;
 let currentRoles = {};
@@ -170,6 +171,10 @@ function isAssignedToCurrentUser(item) {
 function setMessage(message, tone = "info") {
   authMessage.textContent = message;
   authMessage.dataset.tone = tone;
+}
+
+function logoutRequested() {
+  return new URLSearchParams(location.search).has("logout") || new URLSearchParams(location.search).has("loggedout");
 }
 
 function notificationSent(notification) {
@@ -749,9 +754,10 @@ async function refreshAdmin() {
 
 async function updateMode() {
   const configured = await hasAdminAccount();
-  const loggedIn = await isAdminLoggedIn();
+  const loggedIn = !logoutRequested() && await isAdminLoggedIn();
   authPanel.hidden = loggedIn;
   adminPanel.hidden = !loggedIn;
+  if (topActions) topActions.hidden = !loggedIn;
   setupPanel.hidden = configured;
   loginPanel.hidden = !configured;
   if (loggedIn) {

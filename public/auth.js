@@ -512,7 +512,11 @@ export async function initAccessibleNavigation() {
     return { status, user };
   }
   if (isAndroidApp && user && !["schedule.html", "crew.html", "profile.html", "downloads.html"].includes(currentPage)) {
-    location.replace("schedule.html");
+    if (currentPage === "admin.html" && (new URLSearchParams(location.search).has("logout") || new URLSearchParams(location.search).has("loggedout"))) {
+      document.body.classList.add("login-only");
+    } else {
+      location.replace("schedule.html");
+    }
     return { status, user };
   }
   if (user) {

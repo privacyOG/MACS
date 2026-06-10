@@ -2514,6 +2514,23 @@ async function handleRequest(req, res) {
     }
     if ((url.pathname.startsWith("/api/auth/") || url.pathname.startsWith("/api/health/") || url.pathname.startsWith("/api/profile") || url.pathname.startsWith("/api/team") || url.pathname.startsWith("/api/jobs/") || url.pathname.startsWith("/api/roster/") || url.pathname.startsWith("/api/customers/") || url.pathname.startsWith("/api/customer-messages/") || url.pathname.startsWith("/api/field/") || url.pathname.startsWith("/api/operations/") || url.pathname.startsWith("/api/security/") || url.pathname === "/api/login-activity") && await handleAuth(req, res, url)) return;
 
+    if (url.pathname === "/admin.html" && url.searchParams.has("logout")) {
+      const sessionId = parseCookies(req).macs_admin_session;
+      const session = sessionId ? sessions.get(sessionId) : null;
+      if (sessionId) sessions.delete(sessionId);
+      if (session?.loginId) {
+        const now = new Date().toISOString();
+        await updateLoginActivity(session.loginId, { logoutAt: now, lastSeenAt: now });
+      }
+      res.writeHead(302, {
+        "Location": `/admin.html?loggedout=1&t=${Date.now()}`,
+        "Cache-Control": "no-store",
+        "Set-Cookie": "macs_admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+      });
+      res.end();
+      return;
+    }
+
     if ((url.pathname === "/quote.html" || url.pathname === "/schedule.html" || url.pathname === "/customers.html" || url.pathname === "/invoices.html" || url.pathname === "/crew.html" || url.pathname === "/reports.html" || url.pathname === "/profile.html") && !currentSession(req)) {
       res.writeHead(302, {
         "Location": `/admin.html?next=${encodeURIComponent(url.pathname)}`,

@@ -497,6 +497,31 @@ video {
   background: var(--surface-strong);
 }
 
+/* Status color bars on job cards */
+.route-job[data-status*="assigned"],
+.route-job[data-status*="scheduled"] {
+  border-left: 4px solid var(--status-scheduled);
+}
+
+.route-job[data-status*="progress"] {
+  border-left: 4px solid var(--status-progress);
+}
+
+.route-job[data-status*="pending"],
+.route-job[data-status*="completed_pending_approval"] {
+  border-left: 4px solid var(--status-approval);
+}
+
+.route-job[data-status*="approved"],
+.route-job[data-status*="completed"] {
+  border-left: 4px solid var(--status-done);
+}
+
+.schedule-item[data-status*="archived"],
+.schedule-item[data-status*="rejected"] {
+  border-left: 4px solid var(--status-draft);
+}
+
 .customer-card-head,
 .route-job,
 .crew-job {
@@ -1451,6 +1476,39 @@ body[data-android-app="true"] .menu-toggle {
   grid-column: 1 / -1;
 }
 
+/* Skeleton loaders */
+.skeleton-pulse {
+  background: linear-gradient(90deg, #e8e4d8 25%, #f0ece0 50%, #e8e4d8 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-stat {
+  height: 5.2rem;
+  width: 100%;
+}
+
+.skeleton-line {
+  height: 0.85rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-line.short { width: 60%; }
+.skeleton-line.medium { width: 75%; }
+.skeleton-line.long { width: 90%; }
+
+.skeleton-card {
+  padding: 1rem;
+  min-height: 3.5rem;
+}
+
 .admin-card {
   display: grid;
   gap: 0.85rem;
@@ -1902,6 +1960,27 @@ body[data-android-app="true"] .menu-toggle {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 0.85rem;
+}
+
+/* Collapsible section chevron */
+.section-chevron {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.35rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.section-chevron svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.collapsible-section[hidden] .section-chevron {
+  transform: rotate(-90deg);
 }
 
 .section-head span,
@@ -2941,6 +3020,15 @@ select:focus {
   .settings-tile,
   .service-grid article {
     padding: 0.75rem;
+  }
+
+  /* Skeleton adjustments for mobile */
+  .skeleton-stat {
+    height: 4rem;
+  }
+
+  .skeleton-card {
+    min-height: 2.8rem;
   }
 
   .dashboard-stat {

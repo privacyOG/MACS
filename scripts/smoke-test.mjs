@@ -58,7 +58,7 @@ for (const token of ["recurring-form", "recurring-list", "quote-schedule-list", 
 }
 
 const downloadsHtml = await readFile(path.join(root, "public/downloads.html"), "utf8");
-for (const token of ["MACS Downloads", "About the App", "App Info", "Android 7.0 and above", "macs-lawnquote-android-v1.0.12.apk"]) {
+for (const token of ["MACS Downloads", "About the App", "App Info", "Android 7.0 and above", "macs-lawnquote-android-v1.0.13.apk"]) {
   if (!downloadsHtml.includes(token)) throw new Error(`Missing expected downloads token: ${token}`);
 }
 

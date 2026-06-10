@@ -282,6 +282,17 @@ function showScheduleStartupError(message) {
   setMessage(message || "The schedule could not load. Check the connection and try again.", "warning");
 }
 
+function hideSkeletons() {
+  document.querySelectorAll(".skeleton-pulse").forEach(el => el.remove());
+  const roleEl = document.getElementById("schedule-role");
+  if (roleEl) {
+    roleEl.classList.remove("skeleton-line", "short");
+    roleEl.style.display = "";
+    roleEl.style.minHeight = "";
+    roleEl.style.width = "";
+  }
+}
+
 function addDays(date, days) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
@@ -1223,9 +1234,23 @@ async function initSchedulePage() {
     renderTeamOptions();
     resetRecurringForm();
     renderAll();
+    hideSkeletons();
   } catch (error) {
     showScheduleStartupError(error?.message);
+    setTimeout(() => hideSkeletons(), 2500);
   }
+}
+
+// Collapsible recurring editor on mobile
+const chevronButton = document.getElementById("recurring-editor-chevron");
+if (chevronButton) {
+  let collapsed = false;
+  const bodyEl = document.getElementById("recurring-editor-body");
+  chevronButton.addEventListener("click", () => {
+    collapsed = !collapsed;
+    if (bodyEl) bodyEl.hidden = collapsed;
+    chevronButton.style.transform = collapsed ? "rotate(-90deg)" : "";
+  });
 }
 
 initSchedulePage();

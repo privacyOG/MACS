@@ -34,18 +34,27 @@
       <section class="admin-card schedule-wide">
         <div class="section-head">
           <h2>Scheduled Jobs</h2>
-          <span id="schedule-role">Loading access</span>
+          <span id="schedule-role" class="skeleton-line short" style="display:inline-block;min-height:1.1rem;width:8rem;"></span>
         </div>
-        <div id="schedule-stats" class="dashboard-stats"></div>
+        <div id="schedule-stats" class="dashboard-stats">
+          <div class="skeleton-pulse skeleton-stat"></div>
+          <div class="skeleton-pulse skeleton-stat"></div>
+          <div class="skeleton-pulse skeleton-stat"></div>
+          <div class="skeleton-pulse skeleton-stat"></div>
+        </div>
         <p id="schedule-message" class="auth-message" data-tone="info"></p>
       </section>
 
-      <section id="recurring-editor-card" class="admin-card">
+      <section id="recurring-editor-card" class="admin-card collapsible-section">
         <div class="section-head">
           <h2>Recurring Job</h2>
           <span>Weekly, fortnightly, and monthly runs</span>
+          <button type="button" class="section-chevron" id="recurring-editor-chevron" aria-label="Toggle recurring editor" title="Collapse/expand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
         </div>
-        <form id="recurring-form" class="admin-form">
+        <div id="recurring-editor-body">
+          <form id="recurring-form" class="admin-form">
           <input id="recurring-id" type="hidden" />
           <label>
             Link saved quote
@@ -102,6 +111,7 @@
             <button class="secondary-button" id="reset-recurring" type="button">New job</button>
           </div>
         </form>
+        </div><!-- /recurring-editor-body -->
       </section>
 
       <section class="admin-card schedule-wide">

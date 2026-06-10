@@ -863,7 +863,11 @@ function renderWeekCalendar() {
     header.textContent = dayLabel(day);
     column.append(header);
     if (!jobs.length) {
-      column.insertAdjacentHTML("beforeend", `<p class="empty-state">No assigned jobs</p>`);
+      column.insertAdjacentHTML("beforeend", `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+          <p>No assigned jobs</p>
+        </div>`);
       return column;
     }
     for (const job of jobs) {
@@ -1025,7 +1029,11 @@ function renderRouteDayList() {
     .filter((job) => job.scheduledDate === preferredDay)
     .sort((a, b) => `${a.startTime || ""}`.localeCompare(`${b.startTime || ""}`));
   if (!jobs.length) {
-    routeDayList.innerHTML = `<p class="empty-state">No jobs scheduled for ${dateLabel(preferredDay)}.</p>`;
+    routeDayList.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        <p>No jobs scheduled for ${dateLabel(preferredDay)}.</p>
+      </div>`;
     return;
   }
   routeDayList.classList.add("timeline-route");
@@ -1065,7 +1073,11 @@ function renderRouteDayList() {
 function renderRecurringList() {
   const jobs = recurringJobs().filter((job) => canManage() || isAssignedToCurrentUser(job));
   if (!jobs.length) {
-    recurringList.innerHTML = `<p class="empty-state">No recurring jobs available for this login.</p>`;
+    recurringList.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h1a4 4 0 0 1 4 4v2"></path><line x1="8" y1="21" x2="8" y2="11"></line><line x1="3" y1="21" x2="16" y2="21"></line></svg>
+        <p>No recurring jobs available for this login.</p>
+      </div>`;
     return;
   }
   recurringList.replaceChildren(...jobs.map((job) => {
@@ -1108,7 +1120,11 @@ function renderRecurringList() {
 function renderQuoteScheduleList() {
   const savedQuotes = unrosteredQuotes().filter((quote) => canManage() || isAssignedToCurrentUser(quote));
   if (!savedQuotes.length) {
-    quoteScheduleList.innerHTML = `<p class="empty-state">No quote jobs available for this login.</p>`;
+    quoteScheduleList.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        <p>No quote jobs available for this login.</p>
+      </div>`;
     return;
   }
   quoteScheduleList.replaceChildren(...savedQuotes.map((quote) => {
@@ -1254,3 +1270,72 @@ if (chevronButton) {
 }
 
 initSchedulePage();
+
+// Pull-to-refresh for Android WebView
+(function setupPullToRefresh() {
+  let startY = 0;
+  let pulling = false;
+  const threshold = 100;
+  const indicator = document.createElement("div");
+  indicator.className = "pull-indicator";
+  indicator.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 4 23 10 17 10"/>
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+    </svg>
+    <span class="pull-text">Pull to refresh</span>
+  `;
+  document.querySelector("main").prepend(indicator);
+
+  const onRefresh = async () => {
+    indicator.classList.add("refreshing");
+    indicator.querySelector(".pull-text").textContent = "Refreshing…";
+    try {
+      await refreshSharedJobs();
+      await refreshRoster();
+      renderAll();
+      hideSkeletons();
+      setMessage("Updated", "info");
+      setTimeout(() => setMessage("", "info"), 2000);
+    } catch (e) {
+      setMessage("Refresh failed: " + e.message, "warning");
+    } finally {
+      indicator.classList.remove("refreshing");
+      indicator.style.transform = "translateY(-60px)";
+      pulling = false;
+    }
+  };
+
+  document.addEventListener("touchstart", (e) => {
+    if (window.scrollY <= 0 && e.touches[0].clientX > 24) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchmove", (e) => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 0 && window.scrollY <= 0) {
+      const progress = Math.min(dy / threshold, 1);
+      indicator.style.transform = `translateY(${progress * 40 - 60}px)`;
+      if (progress >= 0.85) {
+        indicator.querySelector(".pull-text").textContent = "Release to refresh";
+      }
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchend", () => {
+    if (!pulling) return;
+    const transform = indicator.style.transform;
+    const match = transform.match(/translateY\(([-\d.]+)px\)/);
+    const currentY = match ? parseFloat(match[1]) : -60;
+    if (currentY >= -25) {
+      onRefresh();
+    } else {
+      indicator.style.transform = "translateY(-60px)";
+      pulling = false;
+    }
+  }, { passive: true });
+})();

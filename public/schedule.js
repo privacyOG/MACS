@@ -1257,10 +1257,16 @@ todayWeekButton.addEventListener("click", () => {
 
 // Floating Today FAB — mirrors the "This week" button, visible on mobile only
 if (todayFab) {
-  todayFab.addEventListener("click", () => {
+  const jumpToToday = () => {
     weekStart = startOfWeek(new Date());
     renderWeekCalendar();
-  });
+  };
+  todayFab.addEventListener("click", jumpToToday);
+  // Direct touch handling to bypass any document-level pull-to-refresh interference
+  todayFab.addEventListener("touchend", (e) => {
+    e.stopPropagation();
+    jumpToToday();
+  }, { passive: true });
 }
 
 document.querySelector("#reset-recurring").addEventListener("click", resetRecurringForm);
@@ -1344,7 +1350,7 @@ initSchedulePage();
   };
 
   document.addEventListener("touchstart", (e) => {
-    if (window.scrollY <= 0 && e.touches[0].clientX > 24) {
+    if (window.scrollY <= 0 && e.touches[0].clientX > 24 && !e.target.closest(".today-fab")) {
       startY = e.touches[0].clientY;
       pulling = true;
     }

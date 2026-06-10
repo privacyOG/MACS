@@ -63,6 +63,10 @@ export async function logoutAdmin() {
     await api("/api/auth/logout", {});
   } finally {
     if (navigator.userAgent.includes("MACS-LawnQuote-Android")) {
+      if (window.MacsAndroid?.logoutToLogin) {
+        window.MacsAndroid.logoutToLogin();
+        return;
+      }
       location.replace(`admin.html?logout=1&t=${Date.now()}`);
     } else {
       location.replace("admin.html");
@@ -320,6 +324,7 @@ const navItems = [
   { page: "quote", href: "quote.html", icon: "+", label: "Quote" },
   { page: "schedule", href: "schedule.html", icon: "▦", label: "Schedule" },
   { page: "crew", href: "crew.html", icon: "◉", label: "Crew" },
+  { page: "downloads", href: "downloads.html", icon: "⇩", label: "Downloads" },
   { page: "profile", href: "profile.html", icon: "◎", label: "Profile" }
 ];
 
@@ -494,6 +499,9 @@ export async function initAccessibleNavigation() {
   const currentAndroidVersion = androidAppVersion();
   document.body.dataset.androidApp = isAndroidApp ? "true" : "false";
   document.body.dataset.androidAppVersion = currentAndroidVersion;
+  document.body.dataset.loggedIn = user ? "true" : "false";
+  document.body.dataset.role = user?.role || "guest";
+  document.body.classList.toggle("login-only", isAndroidApp && !user && currentPageKey() === "admin");
   if (isAndroidApp && compareVersions(currentAndroidVersion, "1.0.4") < 0) {
     document.documentElement.style.setProperty("--android-status-offset", "48px");
   }
@@ -511,10 +519,11 @@ export async function initAccessibleNavigation() {
     startInactivityLogout(status.security?.sessionTimeoutMinutes || 30);
     recordCurrentLocation({ force: false }).catch(() => {});
   }
-  document.body.dataset.loggedIn = user ? "true" : "false";
-  document.body.dataset.role = user?.role || "guest";
   for (const link of document.querySelectorAll("[data-page]")) {
     link.hidden = !canAccessPage(user, link.dataset.page);
+  }
+  for (const button of document.querySelectorAll("#logout-admin")) {
+    button.hidden = !user;
   }
   for (const element of document.querySelectorAll("[data-auth-label]")) {
     element.textContent = user ? `${user.username} · ${user.roleLabel}` : "Login required";

@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
+import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
@@ -29,6 +30,7 @@ import java.util.Locale;
 
 public class MainActivity extends Activity {
     private static final String APP_URL = "https://macs.rctrusts.com/schedule.html";
+    private static final String LOGIN_URL = "https://macs.rctrusts.com/admin.html";
     private static final String APP_HOST = "macs.rctrusts.com";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final int LOCATION_REQUEST = 1002;
@@ -93,6 +95,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 if (url != null && url.contains("admin.html") && url.contains("logout=1")) {
+                    clearWebSession();
                     view.clearHistory();
                 }
             }
@@ -207,7 +210,30 @@ public class MainActivity extends Activity {
         return cleaned + ".bin";
     }
 
+    private void clearWebSession() {
+        try {
+            CookieManager cookieManager = CookieManager.getInstance();
+            cookieManager.removeAllCookies(null);
+            cookieManager.flush();
+        } catch (Exception ignored) {
+        }
+        try {
+            webView.clearCache(true);
+            webView.clearFormData();
+            webView.clearHistory();
+        } catch (Exception ignored) {
+        }
+    }
+
     public class AndroidBridge {
+        @JavascriptInterface
+        public void logoutToLogin() {
+            runOnUiThread(() -> {
+                clearWebSession();
+                webView.loadUrl(LOGIN_URL + "?logout=1&t=" + System.currentTimeMillis());
+            });
+        }
+
         @JavascriptInterface
         public void openCredential(String dataUrl, String filename, String mimeType) {
             if (dataUrl == null || !dataUrl.startsWith("data:")) return;

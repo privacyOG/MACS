@@ -793,6 +793,13 @@ h2 {
   min-width: 0;
 }
 
+body.login-only .top-actions,
+body.login-only .menu-toggle,
+body.login-only .mobile-bottom-nav,
+body.login-only .outdoor-mode-toggle {
+  display: none;
+}
+
 .mobile-bottom-nav {
   position: fixed;
   right: 0.65rem;
@@ -800,7 +807,7 @@ h2 {
   left: 0.65rem;
   z-index: 35;
   display: none;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 0.35rem;
   padding: 0.42rem;
   border: 1px solid rgba(31, 122, 79, 0.22);

@@ -792,7 +792,7 @@ loginForm.addEventListener("submit", async (event) => {
     document.querySelector("#login-2fa-code").value.trim()
   );
   if (!result.ok) return showLoginPopup(result.message);
-  await recordCurrentLocation({ force: true });
+  recordCurrentLocation({ force: true }).catch(() => {});
   location.href = currentNextUrl();
 });
 

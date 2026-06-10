@@ -1,4 +1,4 @@
-const CACHE_NAME = "macs-lawnquote-ui-v8";
+const CACHE_NAME = "macs-lawnquote-ui-v9";
 const CORE_ASSETS = [
   "./offline.html",
   "./styles.css",
@@ -27,6 +27,10 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
+  if (url.pathname.startsWith("/api/") || url.pathname === "/downloads/android-latest.json") {
+    event.respondWith(fetch(request, { cache: "no-store" }));
+    return;
+  }
 
   if (request.mode === "navigate") {
     event.respondWith(
@@ -37,12 +41,12 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request).then((response) => {
+    fetch(request).then((response) => {
       if (response.ok) {
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
       }
       return response;
-    }))
+    }).catch(() => caches.match(request))
   );
 });

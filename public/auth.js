@@ -1,11 +1,28 @@
 async function api(path, body) {
-  const response = await fetch(path, {
-    method: body ? "POST" : "GET",
-    headers: body ? { "Content-Type": "application/json" } : {},
-    body: body ? JSON.stringify(body) : undefined
-  });
-  const result = await response.json();
-  return response.ok ? result : { ok: false, message: result.message || "Request failed." };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(path, {
+      method: body ? "POST" : "GET",
+      headers: body
+        ? { "Accept": "application/json", "Content-Type": "application/json" }
+        : { "Accept": "application/json", "Cache-Control": "no-store" },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+      credentials: "same-origin",
+      signal: controller.signal
+    });
+    const contentType = response.headers.get("content-type") || "";
+    const result = contentType.includes("application/json") ? await response.json() : {};
+    return response.ok ? result : { ok: false, message: result.message || "Request failed." };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.name === "AbortError" ? "Request timed out. Check the connection and try again." : "Network request failed."
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 let inactivityTimer = null;

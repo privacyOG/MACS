@@ -270,6 +270,18 @@ function setMessage(message, tone = "info") {
   messagePanel.dataset.tone = tone;
 }
 
+function showScheduleStartupError(message) {
+  roleLabel.textContent = "Schedule unavailable";
+  recurringEditorCard.hidden = true;
+  routeDayList.closest(".admin-card").hidden = true;
+  recurringList.closest(".admin-card").hidden = true;
+  quoteScheduleList.closest(".admin-card").hidden = true;
+  statsPanel.replaceChildren();
+  weekRange.textContent = "Retry required";
+  weekCalendar.innerHTML = `<p class="empty-state">The schedule could not finish loading.</p>`;
+  setMessage(message || "The schedule could not load. Check the connection and try again.", "warning");
+}
+
 function addDays(date, days) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
@@ -1193,16 +1205,27 @@ document.querySelector("#logout-admin").addEventListener("click", () => {
   logoutAdmin();
 });
 
-if (await requireAdminSession()) {
-  await initAccessibleNavigation();
-  const status = await authStatus();
-  currentUser = status.user;
-  crewGpsEnabled = Boolean(status.security?.crewGpsEnabled);
-  const team = await listTeamMembers();
-  teamUsers = team.ok ? team.users : [];
-  await refreshSharedJobs();
-  await refreshRoster();
-  renderTeamOptions();
-  resetRecurringForm();
-  renderAll();
+async function initSchedulePage() {
+  try {
+    if (!await requireAdminSession()) return;
+    await initAccessibleNavigation();
+    const status = await authStatus();
+    if (!status.loggedIn || !status.user) {
+      location.replace(`admin.html?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`);
+      return;
+    }
+    currentUser = status.user;
+    crewGpsEnabled = Boolean(status.security?.crewGpsEnabled);
+    const team = await listTeamMembers();
+    teamUsers = team.ok ? team.users : [];
+    await refreshSharedJobs();
+    await refreshRoster();
+    renderTeamOptions();
+    resetRecurringForm();
+    renderAll();
+  } catch (error) {
+    showScheduleStartupError(error?.message);
+  }
 }
+
+initSchedulePage();

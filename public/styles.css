@@ -1807,7 +1807,8 @@ body[data-android-app="true"] .menu-toggle {
 .today-fab {
   position: fixed;
   bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
-  right: 1.2rem;
+  left: 1.2rem;
+  right: auto;
   width: 3.4rem;
   height: 3.4rem;
   border-radius: 50%;

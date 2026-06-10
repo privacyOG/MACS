@@ -1,0 +1,9 @@
+{
+  "name": "LawnQuote",
+  "short_name": "LawnQuote",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f5f2e9",
+  "theme_color": "#1f7a4f",
+  "icons": []
+}

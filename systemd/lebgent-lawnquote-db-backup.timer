@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Lebgent LawnQuote PostgreSQL backup nightly
+
+[Timer]
+OnCalendar=*-*-* 02:15:00
+Persistent=true
+Unit=lebgent-lawnquote-db-backup.service
+
+[Install]
+WantedBy=timers.target

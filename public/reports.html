@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f7a4f" />
+    <title>MACS Time Reports</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-page">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MACS Operations</p>
+        <h1>Employee Time Reports</h1>
+      </div>
+      <div class="top-actions">
+        <a class="ghost-button action-link" data-page="home" href="index.html">Home</a>
+        <a class="ghost-button action-link" data-page="schedule" href="schedule.html">Schedule</a>
+        <a class="ghost-button action-link" data-page="customers" href="customers.html">Customers</a>
+        <a class="ghost-button action-link" data-page="invoices" href="invoices.html">Invoices</a>
+        <a class="ghost-button action-link" data-page="admin" href="admin.html">Admin</a>
+        <a class="ghost-button action-link" data-page="downloads" href="downloads.html">Downloads</a>
+        <a class="ghost-button action-link" data-page="profile" href="profile.html">Profile</a>
+      </div>
+    </header>
+
+    <main class="admin-shell">
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>Timesheets</h2>
+          <span>Grouped by date, crew, and employee</span>
+        </div>
+        <div class="customer-toolbar">
+          <select id="report-group">
+            <option value="date">Group by date</option>
+            <option value="employee">Group by employee</option>
+            <option value="crew">Group by crew</option>
+          </select>
+          <button class="primary-button" id="download-report" type="button">Download CSV</button>
+        </div>
+        <div id="report-stats" class="dashboard-stats"></div>
+      </section>
+
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>Logged Time</h2>
+          <span>Based on check-in, completion, and manual worklog minutes</span>
+        </div>
+        <div id="report-list" class="report-list"></div>
+      </section>
+
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>Field Messages</h2>
+          <span>On-my-way SMS and customer communication log</span>
+        </div>
+        <div id="message-log-list" class="report-list"></div>
+      </section>
+
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>Crew GPS & Location</h2>
+          <span>Explicit worker shares, check-in, and completion GPS data</span>
+        </div>
+        <div id="location-log-list" class="report-list"></div>
+      </section>
+    </main>
+
+    <script src="reports.js" type="module"></script>
+  </body>
+</html>

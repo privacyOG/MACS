@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f7a4f" />
+    <title>MACS Profile</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-page">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MACS Team</p>
+        <h1>Profile</h1>
+      </div>
+      <div class="top-actions">
+        <a class="ghost-button action-link" data-page="home" href="index.html">Home</a>
+        <a class="ghost-button action-link" data-page="schedule" href="schedule.html">Schedule</a>
+        <a class="ghost-button action-link" data-page="admin" href="admin.html">Admin</a>
+        <a class="ghost-button action-link" data-page="downloads" href="downloads.html">Downloads</a>
+        <a class="ghost-button action-link" data-page="profile" href="profile.html">Profile</a>
+        <button class="ghost-button" id="logout-admin" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="admin-shell">
+      <section class="admin-grid">
+        <section class="admin-card schedule-wide">
+          <div class="section-head">
+            <h2>Employee Details</h2>
+            <span id="profile-role">Loading</span>
+          </div>
+          <div id="profile-summary" class="dashboard-stats compact-stats"></div>
+          <p id="profile-message" class="auth-message" data-tone="info"></p>
+        </section>
+
+        <section class="admin-card">
+          <div class="section-head">
+            <h2>Contact</h2>
+            <span>Editable by you</span>
+          </div>
+          <form id="profile-contact-form" class="admin-form">
+            <label>
+              Mobile
+              <input id="profile-mobile" autocomplete="tel" />
+            </label>
+            <label>
+              Email
+              <input id="profile-email" type="email" autocomplete="email" required />
+            </label>
+            <button class="primary-button" type="submit">Save contact</button>
+          </form>
+        </section>
+
+        <section class="admin-card schedule-wide">
+          <div class="section-head">
+            <h2>Credentials</h2>
+            <span>Images or PDF, labeled</span>
+          </div>
+          <div class="credential-panel">
+            <div class="field-grid two">
+              <label>
+                Credential label
+                <input id="profile-credential-label" placeholder="Driver licence, First aid, Site induction" />
+              </label>
+              <label>
+                Upload file
+                <input id="profile-credential-file" type="file" accept="image/*,application/pdf" />
+              </label>
+            </div>
+            <div class="inline-actions">
+              <button class="secondary-button" id="add-profile-credential" type="button">Add credential</button>
+              <button class="primary-button" id="save-profile-credentials" type="button">Save credentials</button>
+            </div>
+            <div id="profile-credential-list" class="credential-list"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="profile.js" type="module"></script>
+  </body>
+</html>

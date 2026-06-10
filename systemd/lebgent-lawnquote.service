@@ -1,0 +1,27 @@
+[Unit]
+Description=Lebgent LawnQuote App
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/rabz/.openclaw/workspace/lawnquote
+ExecStart=/usr/bin/node server.mjs
+Restart=always
+RestartSec=5
+TimeoutStopSec=15
+EnvironmentFile=/home/rabz/.openclaw/workspace/lawnquote/.env.production
+Environment=NODE_ENV=production
+Environment=HOST=0.0.0.0
+Environment=PORT=18890
+Environment=FORCE_HTTPS=1
+Environment=PUBLIC_BASE_URL=https://macs.rctrusts.com
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+LockPersonality=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=default.target

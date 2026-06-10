@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f7a4f" />
+    <title>MACS Quotation Tool</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="quote-page">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MACS Mowing & Cleaning Services</p>
+        <h1>Quotation Tool</h1>
+        <p class="device-badge" id="device-badge">Detecting device...</p>
+      </div>
+      <div class="top-actions">
+        <a class="ghost-button action-link" data-page="home" href="index.html">Home</a>
+        <a class="ghost-button action-link" data-page="admin" href="admin.html">Admin</a>
+        <a class="ghost-button action-link" data-page="schedule" href="schedule.html">Schedule</a>
+        <a class="ghost-button action-link" data-page="customers" href="customers.html">Customers</a>
+        <a class="ghost-button action-link" data-page="invoices" href="invoices.html">Invoices</a>
+        <a class="ghost-button action-link" data-page="reports" href="reports.html">Reports</a>
+        <a class="ghost-button action-link" data-page="crew" href="crew.html">Crew</a>
+        <a class="ghost-button action-link" data-page="security" href="security.html">Security</a>
+        <a class="ghost-button action-link" data-page="downloads" href="downloads.html">Downloads</a>
+        <a class="ghost-button action-link" data-page="profile" href="profile.html">Profile</a>
+        <button class="ghost-button" id="reset-form" type="button">New quote</button>
+        <button class="primary-button" form="quote-form" type="submit">Calculate</button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="quote-workspace" aria-label="Quote workspace">
+        <form id="quote-form" class="quote-form">
+          <section class="form-section">
+            <div class="section-head">
+              <h2>Customer</h2>
+              <span>Basic job details</span>
+            </div>
+            <div class="field-grid two">
+              <label>
+                Customer name
+                <input id="customer-name" name="customerName" autocomplete="name" placeholder="e.g. Sarah" />
+              </label>
+              <label>
+                Phone/mobile
+                <input id="customer-phone" name="customerPhone" type="tel" autocomplete="tel" placeholder="e.g. 04xx xxx xxx" />
+              </label>
+              <label>
+                Email address
+                <input id="customer-email" name="customerEmail" type="email" autocomplete="email" placeholder="customer@example.com" />
+              </label>
+              <label>
+                Address
+                <input id="address" name="address" autocomplete="street-address" placeholder="Street, suburb" />
+                <div id="address-suggestions" class="address-suggestions" role="listbox"></div>
+              </label>
+              <label>
+                Job type
+                <select id="job-type" name="jobType">
+                  <option value="mowing">Lawn mowing</option>
+                  <option value="gardening">Gardening maintenance</option>
+                  <option value="landscaping">Landscaping</option>
+                  <option value="combined">Combined service</option>
+                </select>
+              </label>
+              <label>
+                Urgency
+                <select id="urgency" name="urgency">
+                  <option value="normal">Normal</option>
+                  <option value="soon">Within 48 hours</option>
+                  <option value="urgent">Same day / urgent</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="section-head">
+              <h2>Lawn Area</h2>
+              <span>Type dimensions or outline on map</span>
+            </div>
+            <div class="map-helper">
+              <div>
+                <strong>Map measuring</strong>
+                <span>Click around the lawn edge on the satellite/map view, then apply the calculated square metres and edging length.</span>
+              </div>
+              <button class="secondary-button" id="open-map" type="button">Open map measurer</button>
+            </div>
+            <div class="zone-list" id="zone-list"></div>
+            <button class="secondary-button" id="add-zone" type="button">Add lawn area</button>
+          </section>
+
+          <section class="form-section">
+            <div class="section-head">
+              <h2>Site Difficulty</h2>
+              <span>What changes the time</span>
+            </div>
+            <div class="field-grid three">
+              <label>
+                Grass height
+                <select id="grass-height" name="grassHeight">
+                  <option value="regular">Regular</option>
+                  <option value="long">Long</option>
+                  <option value="overgrown">Overgrown</option>
+                </select>
+              </label>
+              <label>
+                Access
+                <select id="access" name="access">
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </label>
+              <label>
+                Slope
+                <select id="slope" name="slope">
+                  <option value="flat">Flat</option>
+                  <option value="mixed">Mixed</option>
+                  <option value="steep">Steep</option>
+                </select>
+              </label>
+              <label>
+                Obstacles
+                <select id="obstacles" name="obstacles">
+                  <option value="few">Few</option>
+                  <option value="some">Some</option>
+                  <option value="many">Many</option>
+                </select>
+              </label>
+              <label>
+                Cleanup level
+                <select id="cleanup" name="cleanup">
+                  <option value="light">Light</option>
+                  <option value="normal">Normal</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </label>
+              <label>
+                Green waste
+                <select id="green-waste" name="greenWaste">
+                  <option value="none">None</option>
+                  <option value="small">Small amount</option>
+                  <option value="large">Large amount</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="section-head">
+              <h2>Travel & Setup</h2>
+              <span>Callout cost inputs</span>
+            </div>
+            <div class="field-grid three">
+              <label>
+                Travel minutes
+                <input id="travel-minutes" type="number" min="0" step="1" value="15" />
+              </label>
+              <label>
+                Setup minutes
+                <input id="setup-minutes" type="number" min="0" step="1" value="10" />
+              </label>
+              <label>
+                Extra notes
+                <input id="notes" placeholder="e.g. narrow side gate" />
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="section-head">
+              <h2>Photos</h2>
+              <span>Stored in this browser only</span>
+            </div>
+            <label class="upload-box" for="photo-input">
+              <input id="photo-input" type="file" accept="image/*" multiple />
+              <strong>Add job photos</strong>
+              <span>Use front yard, back yard, edges, access, and waste photos.</span>
+            </label>
+            <div class="photo-grid" id="photo-grid"></div>
+          </section>
+        </form>
+
+        <aside class="quote-panel" aria-label="Quote result">
+          <section class="result-card highlight">
+            <span class="card-label">Suggested price</span>
+            <strong id="result-price">$0</strong>
+            <p id="result-range">$0 - $0 recommended range</p>
+          </section>
+
+          <section class="result-card">
+            <div class="card-row">
+              <span>Estimated time</span>
+              <strong id="result-time">0 min</strong>
+            </div>
+            <div class="card-row">
+              <span>Lawn area</span>
+              <strong id="result-area">0 m²</strong>
+            </div>
+            <div class="card-row">
+              <span>Edging</span>
+              <strong id="result-edging">0 m</strong>
+            </div>
+            <div class="card-row">
+              <span>Difficulty</span>
+              <strong id="result-difficulty">1.00x</strong>
+            </div>
+          </section>
+
+          <section class="result-card">
+            <h2>Pricing Settings</h2>
+            <label>
+              Hourly rate
+              <input id="hourly-rate" type="number" min="0" step="1" value="85" />
+            </label>
+            <label>
+              Minimum charge
+              <input id="minimum-charge" type="number" min="0" step="1" value="80" />
+            </label>
+            <label>
+              Green waste fee
+              <input id="waste-fee" type="number" min="0" step="1" value="25" />
+            </label>
+            <label>
+              Profit margin %
+              <input id="margin" type="number" min="0" step="1" value="15" />
+            </label>
+          </section>
+
+          <section class="result-card">
+            <h2>Quote Notes</h2>
+            <div id="quote-notes" class="quote-notes"></div>
+            <button class="secondary-button full" id="save-quote" type="button">Save quote</button>
+            <button class="primary-button full" id="print-quote" type="button">Export / print quote</button>
+          </section>
+
+          <section class="result-card">
+            <h2>Price Breakdown</h2>
+            <div id="price-breakdown" class="breakdown-list"></div>
+          </section>
+
+          <section class="result-card">
+            <div class="section-head compact">
+              <h2>Saved Quotes</h2>
+              <button class="text-button" id="clear-history" type="button">Clear</button>
+            </div>
+            <div id="history-list" class="history-list"></div>
+          </section>
+        </aside>
+      </section>
+
+      <section id="print-quote-sheet" class="print-quote-sheet" aria-label="Printable quote">
+        <header>
+          <div>
+            <p class="eyebrow">Customer Quote</p>
+            <h1>MACS Quotation</h1>
+          </div>
+          <strong id="print-price">$0</strong>
+        </header>
+        <div class="print-grid">
+          <section>
+            <h2>Customer</h2>
+            <p id="print-customer">Customer not set</p>
+            <p id="print-phone">Phone/mobile not set</p>
+            <p id="print-email">Email not set</p>
+            <p id="print-address">Address not set</p>
+          </section>
+          <section>
+            <h2>Job Summary</h2>
+            <p id="print-summary">No quote calculated yet.</p>
+            <p id="print-range">$0 - $0 recommended range</p>
+          </section>
+        </div>
+        <section>
+          <h2>Measurements</h2>
+          <div id="print-measurements" class="print-line-list"></div>
+        </section>
+        <section>
+          <h2>Price Breakdown</h2>
+          <div id="print-breakdown" class="print-line-list"></div>
+        </section>
+        <section>
+          <h2>Notes</h2>
+          <div id="print-notes" class="print-line-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <template id="zone-template">
+      <article class="zone-row">
+        <div class="zone-fields">
+          <label>
+            Area name
+            <input class="zone-name" placeholder="Front lawn" />
+          </label>
+          <label>
+            Length m
+            <input class="zone-length" type="number" min="0" step="0.1" value="10" />
+          </label>
+          <label>
+            Width m
+            <input class="zone-width" type="number" min="0" step="0.1" value="6" />
+          </label>
+          <label>
+            Edging m
+            <input class="zone-edging" type="number" min="0" step="0.1" value="18" />
+          </label>
+        </div>
+        <div class="zone-actions">
+          <button class="secondary-button measure-zone" type="button">Map</button>
+          <button class="icon-button remove-zone" type="button" aria-label="Remove lawn area">×</button>
+        </div>
+      </article>
+    </template>
+
+    <dialog id="map-dialog" class="map-dialog">
+      <div class="map-dialog-shell">
+        <div class="map-toolbar">
+          <div>
+            <h2>Outline Lawn Area</h2>
+            <span id="map-status">Click points around the lawn. Double-click or press close polygon when finished.</span>
+          </div>
+          <button class="icon-button" id="close-map" type="button" aria-label="Close map">×</button>
+        </div>
+
+        <div class="map-search">
+          <label>
+            Search address or suburb
+            <input id="map-search-input" placeholder="e.g. Parramatta NSW" />
+            <div id="map-address-suggestions" class="address-suggestions" role="listbox"></div>
+          </label>
+          <button class="secondary-button" id="map-search-button" type="button">Search</button>
+        </div>
+
+        <div class="map-layer-panel" aria-label="Map layer controls">
+          <fieldset>
+            <legend>Base map</legend>
+            <label class="choice-row">
+              <input type="radio" name="base-layer" value="street" checked />
+              Street map
+            </label>
+            <label class="choice-row">
+              <input type="radio" name="base-layer" value="satellite" />
+              Satellite
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend>NSW cadastre</legend>
+            <label class="choice-row">
+              <input id="show-boundaries" type="checkbox" checked />
+              Lot/property boundaries
+            </label>
+            <label class="choice-row">
+              <input id="show-address-labels" type="checkbox" checked />
+              Street address numbers
+            </label>
+            <label class="choice-row">
+              <input id="show-lot-labels" type="checkbox" />
+              Cadastral lot numbers
+            </label>
+          </fieldset>
+        </div>
+
+        <div id="lawn-map" class="lawn-map"></div>
+
+        <div class="map-results">
+          <div>
+            <span>Measured area</span>
+            <strong id="map-area">0 m²</strong>
+          </div>
+          <div>
+            <span>Edging length</span>
+            <strong id="map-edging">0 m</strong>
+          </div>
+          <button class="ghost-button" id="undo-point" type="button">Undo point</button>
+          <button class="ghost-button" id="clear-polygon" type="button">Clear</button>
+          <button class="primary-button" id="apply-polygon" type="button">Apply to quote</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="job-dialog" class="job-dialog">
+      <div class="job-dialog-shell">
+        <div class="map-toolbar">
+          <div>
+            <h2 id="job-dialog-title">Saved Quote</h2>
+            <span id="job-dialog-meta">Quote details</span>
+          </div>
+          <button class="icon-button" id="close-job-dialog" type="button" aria-label="Close saved quote">×</button>
+        </div>
+        <div id="job-dialog-content" class="job-dialog-content"></div>
+        <div class="job-dialog-actions">
+          <button class="secondary-button" id="edit-dialog-job" type="button">Edit this quote</button>
+          <button class="primary-button" id="print-dialog-job" type="button">Print quote</button>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="vendor/leaflet/leaflet.js"></script>
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

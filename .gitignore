@@ -1,0 +1,21 @@
+.env*
+!.env.example
+
+node_modules/
+
+# Runtime data, secrets, backups, and logs stay local.
+data/*.json
+data/*.key
+data/backup/
+data/backups/
+logs/
+
+# Keep the directory available for first-run local storage.
+!data/.gitkeep
+
+# Android local/build artifacts.
+android/.gradle/
+android/local.properties
+android/app/build/
+android/app/*.jks
+android/app/*.keystore

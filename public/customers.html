@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f7a4f" />
+    <title>MACS Customers</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-page">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MACS Operations</p>
+        <h1>Customer History</h1>
+      </div>
+      <div class="top-actions">
+        <a class="ghost-button action-link" data-page="home" href="index.html">Home</a>
+        <a class="ghost-button action-link" data-page="quote" href="quote.html">New Quote</a>
+        <a class="ghost-button action-link" data-page="schedule" href="schedule.html">Schedule</a>
+        <a class="ghost-button action-link" data-page="invoices" href="invoices.html">Invoices</a>
+        <a class="ghost-button action-link" data-page="admin" href="admin.html">Admin</a>
+        <a class="ghost-button action-link" data-page="downloads" href="downloads.html">Downloads</a>
+        <a class="ghost-button action-link" data-page="profile" href="profile.html">Profile</a>
+      </div>
+    </header>
+
+    <main class="admin-shell">
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>Customers & Properties</h2>
+          <span data-auth-label>Loading access</span>
+        </div>
+        <div class="customer-toolbar">
+          <input id="customer-search" placeholder="Search customer, phone, email, address, suburb" />
+          <a class="primary-button" data-page="quote" href="quote.html">Create quote</a>
+        </div>
+        <div id="customer-summary" class="dashboard-stats"></div>
+      </section>
+
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>History</h2>
+          <span>Quotes, rostered visits, completed jobs, and contact details</span>
+        </div>
+        <div id="customer-list" class="customer-list"></div>
+      </section>
+    </main>
+
+    <script src="customers.js" type="module"></script>
+  </body>
+</html>

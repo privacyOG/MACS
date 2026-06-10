@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f7a4f" />
+    <title>MACS Crew</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-page crew-page">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MACS Field App</p>
+        <h1>Crew Jobs</h1>
+        <p class="device-badge" data-auth-label>Loading access</p>
+      </div>
+      <div class="top-actions">
+        <a class="ghost-button action-link" data-page="home" href="index.html">Home</a>
+        <a class="ghost-button action-link" data-page="schedule" href="schedule.html">Schedule</a>
+        <a class="ghost-button action-link" data-page="customers" href="customers.html">Customers</a>
+        <a class="ghost-button action-link" data-page="downloads" href="downloads.html">Downloads</a>
+        <a class="ghost-button action-link" data-page="profile" href="profile.html">Profile</a>
+        <button class="ghost-button" id="logout-admin" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="admin-shell">
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>Today’s Route</h2>
+          <span>No pricing visible in crew mode</span>
+        </div>
+        <div id="crew-list" class="crew-list"></div>
+      </section>
+    </main>
+
+    <script src="crew.js" type="module"></script>
+  </body>
+</html>

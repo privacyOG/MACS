@@ -1,0 +1,16 @@
+{
+  "name": "lawnquote",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:backup": "node scripts/backup-postgres.mjs",
+    "db:check": "node scripts/check-postgres.mjs",
+    "db:migrate": "node scripts/migrate-json-to-postgres.mjs",
+    "start": "node server.mjs",
+    "test": "node scripts/smoke-test.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.21.0"
+  }
+}

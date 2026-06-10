@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f7a4f" />
+    <title>MACS Schedule</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-page">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MACS Admin</p>
+        <h1>Schedule</h1>
+      </div>
+      <div class="top-actions">
+        <a class="ghost-button action-link" data-page="home" href="index.html">Home</a>
+        <a class="ghost-button action-link" data-page="admin" href="admin.html">Admin</a>
+        <a class="ghost-button action-link" data-page="customers" href="customers.html">Customers</a>
+        <a class="ghost-button action-link" data-page="invoices" href="invoices.html">Invoices</a>
+        <a class="ghost-button action-link" data-page="reports" href="reports.html">Reports</a>
+        <a class="ghost-button action-link" data-page="crew" href="crew.html">Crew</a>
+        <a class="ghost-button action-link" data-page="security" href="security.html">Security</a>
+        <a class="ghost-button action-link" data-page="downloads" href="downloads.html">Downloads</a>
+        <a class="ghost-button action-link" data-page="profile" href="profile.html">Profile</a>
+        <a class="ghost-button action-link" data-page="quote" href="quote.html">Quotation Tool</a>
+        <button class="ghost-button" id="logout-admin" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="admin-shell schedule-shell">
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>Scheduled Jobs</h2>
+          <span id="schedule-role">Loading access</span>
+        </div>
+        <div id="schedule-stats" class="dashboard-stats"></div>
+        <p id="schedule-message" class="auth-message" data-tone="info"></p>
+      </section>
+
+      <section id="recurring-editor-card" class="admin-card">
+        <div class="section-head">
+          <h2>Recurring Job</h2>
+          <span>Weekly, fortnightly, and monthly runs</span>
+        </div>
+        <form id="recurring-form" class="admin-form">
+          <input id="recurring-id" type="hidden" />
+          <label>
+            Link saved quote
+            <select id="recurring-quote"></select>
+          </label>
+          <div class="field-grid two">
+            <label>
+              Customer
+              <input id="recurring-customer" autocomplete="off" required />
+            </label>
+            <label>
+              Assigned team member
+              <select id="recurring-assigned"></select>
+            </label>
+          </div>
+          <label>
+            Address
+            <input id="recurring-address" autocomplete="off" required />
+          </label>
+          <div class="field-grid three">
+            <label>
+              Frequency
+              <select id="recurring-frequency">
+                <option value="weekly">Weekly</option>
+                <option value="fortnightly">Fortnightly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </label>
+            <label>
+              First / next run
+              <input id="recurring-next-run" type="date" required />
+            </label>
+            <label>
+              Start time
+              <input id="recurring-start-time" type="time" required />
+            </label>
+          </div>
+          <div class="field-grid two">
+            <label>
+              Finish time
+              <input id="recurring-finish-time" type="time" required />
+            </label>
+            <label>
+              Estimated price
+              <input id="recurring-price" type="number" min="0" step="1" value="0" />
+            </label>
+          </div>
+          <label>
+            Notes
+            <input id="recurring-notes" autocomplete="off" />
+          </label>
+          <div class="inline-actions">
+            <button class="primary-button" type="submit">Save recurring job</button>
+            <button class="secondary-button" id="reset-recurring" type="button">New job</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="admin-card schedule-wide">
+        <div class="section-head roster-head">
+          <div>
+            <h2>Schedule / Roster</h2>
+            <span id="week-range">Loading week</span>
+          </div>
+          <div class="week-toolbar">
+            <button class="secondary-button" id="prev-week" type="button" aria-label="Previous week">‹</button>
+            <button class="secondary-button" id="today-week" type="button">This week</button>
+            <button class="secondary-button" id="next-week" type="button" aria-label="Next week">›</button>
+          </div>
+        </div>
+        <div id="week-calendar" class="week-calendar"></div>
+      </section>
+
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>Day Route & Worklog</h2>
+          <span>Ordered visits, map links, time, materials, and invoice readiness</span>
+        </div>
+        <div id="route-day-list" class="route-day-list"></div>
+      </section>
+
+      <section class="admin-card">
+        <div class="section-head">
+          <h2>Recurring Runs</h2>
+          <span>Completion requires assigned member submission</span>
+        </div>
+        <div id="recurring-list" class="admin-list schedule-list"></div>
+      </section>
+
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>Quote Jobs</h2>
+          <span>Assign accepted work and approve completed submissions</span>
+        </div>
+        <div id="quote-schedule-list" class="admin-list schedule-list"></div>
+      </section>
+    </main>
+
+    <script src="schedule.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f7a4f" />
+    <title>MACS Mowing & Cleaning Services</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="home-page">
+    <header class="site-nav" aria-label="Main navigation">
+      <a class="brand-mark" href="index.html" aria-label="MACS home">
+        <img src="assets/macs-logo.jpg" alt="MACS Mowing & Cleaning Services" />
+      </a>
+      <nav>
+        <a href="#operations">Operations</a>
+        <a href="#workflow">Workflow</a>
+        <a data-page="admin" href="admin.html">Admin</a>
+        <a data-page="schedule" href="schedule.html">Schedule</a>
+        <a data-page="profile" href="profile.html">Profile</a>
+        <a data-page="downloads" href="downloads.html">Downloads</a>
+        <a class="nav-quote" data-page="quote" href="quote.html">New Quote</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="home-hero">
+        <img class="hero-image" src="assets/lawn-mower.jpg" alt="Lawn mower cutting fresh green grass" />
+        <div class="hero-copy">
+          <div class="hero-logo-lockup">
+            <img src="assets/macs-logo.jpg" alt="MACS Mowing & Cleaning Services" />
+          </div>
+          <p class="eyebrow">MACS Mowing & Cleaning Services</p>
+          <h1>Quote, schedule, approve, and run field jobs in one place.</h1>
+          <p>
+            A mobile-friendly operations hub for mowing, gardening, cleaning, and landscaping work: customer quotes, rostered visits, staff completion, approvals, and job history.
+          </p>
+          <div class="home-menu-grid" aria-label="Main menu">
+            <a class="home-menu-card featured" data-page="quote" href="quote.html">
+              <span>Quote</span>
+              <strong>Create Quote</strong>
+              <small>Measure, price, save, and print professional quotes</small>
+            </a>
+            <a class="home-menu-card" data-page="schedule" href="schedule.html">
+              <span>Schedule</span>
+              <strong>Roster Jobs</strong>
+              <small>Assign visits, notify staff, approve completed work</small>
+            </a>
+            <a class="home-menu-card" data-page="customers" href="customers.html">
+              <span>Customers</span>
+              <strong>Job History</strong>
+              <small>Review quotes, contacts, addresses, and saved work</small>
+            </a>
+            <a class="home-menu-card" data-page="schedule" href="schedule.html#route-day-list">
+              <span>Workflow</span>
+              <strong>Run The Day</strong>
+              <small>Routes, time, materials, customer messages, invoices</small>
+            </a>
+            <a class="home-menu-card" data-page="crew" href="crew.html">
+              <span>Crew</span>
+              <strong>Field App</strong>
+              <small>Routes, check in, complete job, on-the-way SMS, no pricing</small>
+            </a>
+            <a class="home-menu-card" data-page="reports" href="reports.html">
+              <span>Reports</span>
+              <strong>Timesheets</strong>
+              <small>Time reports by date, crew, and employee</small>
+            </a>
+            <a class="home-menu-card" data-page="admin" href="admin.html">
+              <span>Admin</span>
+              <strong>Control Centre</strong>
+              <small>Team access, job pipeline, materials, activity</small>
+            </a>
+            <a class="home-menu-card" data-page="security" href="security.html">
+              <span>Security</span>
+              <strong>Owner Controls</strong>
+              <small>Team approvals, user logs, audit, backups</small>
+            </a>
+            <a class="home-menu-card" data-page="profile" href="profile.html">
+              <span>Profile</span>
+              <strong>My Details</strong>
+              <small>View employee details and update mobile or email</small>
+            </a>
+            <a class="home-menu-card" data-page="downloads" href="downloads.html">
+              <span>Downloads</span>
+              <strong>Android App</strong>
+              <small>Download the MACS Android APK for team members</small>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="home-band ops-dashboard" id="operations" aria-label="Operations dashboard">
+        <div class="home-section-head">
+          <p class="eyebrow">Operations</p>
+          <h2>Daily command centre for quotes, roster jobs, approvals, and customers.</h2>
+        </div>
+        <div class="ops-grid">
+          <article class="ops-panel live-panel">
+            <div class="panel-head">
+              <span>Live overview</span>
+              <strong id="home-status">Sign in for live figures</strong>
+            </div>
+            <div class="ops-kpis">
+              <div>
+                <span>Quotes</span>
+                <strong id="home-kpi-quotes">--</strong>
+              </div>
+              <div>
+                <span>Rostered</span>
+                <strong id="home-kpi-roster">--</strong>
+              </div>
+              <div>
+                <span>Approvals</span>
+                <strong id="home-kpi-approvals">--</strong>
+              </div>
+              <div>
+                <span>Recurring</span>
+                <strong id="home-kpi-recurring">--</strong>
+              </div>
+            </div>
+          </article>
+          <article class="ops-panel today-panel">
+            <div class="panel-head">
+              <span>Today</span>
+              <strong id="home-today-title">Roster snapshot</strong>
+            </div>
+            <div class="today-list" id="home-today-list">
+              <p>Open Schedule to view today’s assigned work.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="home-band workflow-band" id="workflow" aria-label="Field-service workflow">
+        <div class="home-section-head">
+          <p class="eyebrow">Workflow</p>
+          <h2>Closer to a full field-service app, while keeping the MACS workflow simple.</h2>
+        </div>
+        <div class="service-grid workflow-grid">
+          <article>
+            <span>Quote</span>
+            <strong>Customer details, map measurements, job photos, quote history, and print-ready pricing.</strong>
+          </article>
+          <article>
+            <span>Schedule</span>
+            <strong>Drag-ready roster concepts, recurring jobs, team assignment, completion locks, and approval queues.</strong>
+          </article>
+          <article>
+            <span>Customer History</span>
+            <strong>Phone, email, address, quote details, roster visits, notes, and completed work in one trail.</strong>
+          </article>
+          <article>
+            <span>Route Planning</span>
+            <strong>Daily job order, map links, suburb grouping, and future fastest-route optimisation.</strong>
+          </article>
+          <article>
+            <span>Time & Materials</span>
+            <strong>Staff completion, job duration, materials used, green waste, and admin approval context.</strong>
+          </article>
+          <article>
+            <span>Invoice</span>
+            <strong>Approved jobs flow into an invoice queue, with room for Xero or QuickBooks export.</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="home-band quote-entry" aria-label="Quotation tool entry">
+        <div>
+          <p class="eyebrow">Quotation page</p>
+          <h2>Start with the work that pays.</h2>
+          <p>Create a quote, assign it into Schedule, let the team submit completion from the field, then approve it from the operations flow.</p>
+        </div>
+          <div class="hero-actions">
+            <a class="primary-button" data-page="quote" href="quote.html">New Quote</a>
+            <a class="secondary-button" data-page="schedule" href="schedule.html">Open Schedule</a>
+          </div>
+      </section>
+    </main>
+    <script type="module">
+      import { initAccessibleNavigation } from "./auth.js";
+      initAccessibleNavigation();
+    </script>
+    <script type="module" src="home.js"></script>
+  </body>
+</html>

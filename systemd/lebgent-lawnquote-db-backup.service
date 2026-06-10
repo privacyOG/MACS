@@ -1,0 +1,15 @@
+[Unit]
+Description=Lebgent LawnQuote PostgreSQL backup
+After=default.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/rabz/.openclaw/workspace/lawnquote
+EnvironmentFile=/home/rabz/.openclaw/workspace/lawnquote/.env.production
+ExecStart=/usr/bin/npm run db:backup
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+LockPersonality=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native

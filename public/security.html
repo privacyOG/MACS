@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f7a4f" />
+    <title>MACS Security</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-page">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MACS Owner Admin</p>
+        <h1>Security</h1>
+      </div>
+      <div class="top-actions">
+        <a class="ghost-button action-link" data-page="home" href="index.html">Home</a>
+        <a class="ghost-button action-link" data-page="admin" href="admin.html">Admin</a>
+        <a class="ghost-button action-link" data-page="schedule" href="schedule.html">Schedule</a>
+        <a class="ghost-button action-link" data-page="downloads" href="downloads.html">Downloads</a>
+        <a class="ghost-button action-link" data-page="profile" href="profile.html">Profile</a>
+        <a class="ghost-button action-link" data-page="quote" href="quote.html">Quotation Tool</a>
+        <button class="ghost-button" id="logout-admin" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="admin-shell">
+      <section class="admin-grid">
+        <section class="admin-card schedule-wide">
+          <div class="section-head">
+            <h2>Security Status</h2>
+            <span id="security-role">Owner Admin only</span>
+          </div>
+          <div id="security-summary" class="dashboard-stats compact-stats"></div>
+          <p id="security-message" class="auth-message" data-tone="info"></p>
+        </section>
+
+        <section id="team-card" class="admin-card schedule-wide">
+          <div class="section-head">
+            <h2>Team Logins</h2>
+            <span>Approvals and access</span>
+          </div>
+          <form id="team-form" class="admin-form">
+            <div class="field-grid two">
+              <label>
+                Username
+                <input id="team-username" autocomplete="off" required />
+              </label>
+              <label>
+                Email
+                <input id="team-email" type="email" autocomplete="off" required />
+              </label>
+              <label>
+                Temporary password
+                <input id="team-password" type="password" autocomplete="new-password" required minlength="8" />
+              </label>
+              <label>
+                Access status
+                <select id="team-role">
+                  <option value="owner">Owner Admin - root access</option>
+                  <option value="leader">Team Leader - non-root access</option>
+                  <option value="member">Team Member - mostly read access</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-grid two">
+              <label>
+                Full name
+                <input id="team-full-name" autocomplete="name" data-profile-field="fullName" />
+              </label>
+              <label>
+                Mobile
+                <input id="team-mobile" autocomplete="tel" data-profile-field="mobile" />
+              </label>
+              <label>
+                D.O.B
+                <input id="team-dob" type="date" data-profile-field="dateOfBirth" />
+              </label>
+              <label>
+                Employee address
+                <input id="team-address" autocomplete="street-address" data-profile-field="address" />
+              </label>
+            </div>
+            <div class="credential-panel">
+              <div class="section-head compact-head">
+                <h3>Credentials</h3>
+                <span>Optional labeled image or PDF files</span>
+              </div>
+              <div class="field-grid two">
+                <label>
+                  Credential label
+                  <input id="team-credential-label" placeholder="Driver licence, First aid, Site induction" />
+                </label>
+                <label>
+                  Upload file
+                  <input id="team-credential-file" type="file" accept="image/*,application/pdf" />
+                </label>
+              </div>
+              <button class="secondary-button" id="add-team-credential" type="button">Add credential</button>
+              <div id="team-credential-list" class="credential-list"></div>
+            </div>
+            <button class="primary-button" type="submit">Create team login</button>
+          </form>
+          <div id="team-list" class="admin-list"></div>
+        </section>
+
+        <section id="security-tools-card" class="admin-card">
+          <div class="section-head">
+            <h2>Security Tools</h2>
+            <span>Requires Owner Admin session</span>
+          </div>
+          <p class="empty-state">Owner Admin security actions require authenticator app 2FA when 2FA is enabled.</p>
+          <form id="session-timeout-form" class="admin-form security-toggle">
+            <label>
+              Inactivity logout minutes
+              <input id="session-timeout-minutes" type="number" min="5" max="240" step="5" required />
+            </label>
+            <button class="secondary-button" type="submit">Save timeout</button>
+          </form>
+          <form id="field-settings-form" class="admin-form security-toggle">
+            <label>
+              <input id="crew-gps-enabled" type="checkbox" />
+              Enable crew GPS capture
+            </label>
+            <label>
+              Crew GPS retention days
+              <input id="crew-gps-retention-days" type="number" min="1" max="90" step="1" required />
+            </label>
+            <button class="secondary-button" type="submit">Save field settings</button>
+          </form>
+          <div class="inline-actions">
+            <button class="secondary-button" id="test-security-email" type="button">Test email alert</button>
+            <button class="primary-button" id="create-backup" type="button">Create encrypted backup</button>
+          </div>
+          <div id="security-tool-output" class="materials-summary"></div>
+        </section>
+
+        <section id="login-activity-card" class="admin-card schedule-wide">
+          <div class="section-head">
+            <h2>Login Activity</h2>
+            <span>User logs</span>
+          </div>
+          <div id="login-activity-list" class="admin-list activity-list"></div>
+        </section>
+
+        <section id="security-audit-card" class="admin-card schedule-wide">
+          <div class="section-head">
+            <h2>Security Audit</h2>
+            <span>Approvals, unlocks, logins, backups, alerts</span>
+          </div>
+          <div id="security-audit-list" class="admin-list activity-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="security.js" type="module"></script>
+  </body>
+</html>

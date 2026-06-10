@@ -1,0 +1,32 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.macs.lawnquote"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.macs.lawnquote"
+        minSdk 24
+        targetSdk 35
+        versionCode 7
+        versionName "1.0.6"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("MACS_LAWNQUOTE_KEYSTORE") ?: "missing-release-key.jks")
+            storePassword System.getenv("MACS_LAWNQUOTE_KEYSTORE_PASSWORD") ?: ""
+            keyAlias System.getenv("MACS_LAWNQUOTE_KEY_ALIAS") ?: "macs-lawnquote"
+            keyPassword System.getenv("MACS_LAWNQUOTE_KEY_PASSWORD") ?: ""
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+}

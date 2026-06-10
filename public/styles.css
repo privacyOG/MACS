@@ -68,7 +68,7 @@ body[data-outdoor-mode="true"] {
     --surface: #1a201c;
     --surface-strong: #222b24;
     --ink: #e8ede9;
-    --muted: #8fa396;
+    --muted: #a3b6aa;
     --line: #354037;
     --green: #3dd98a;
     --green-dark: #1f7a4f;
@@ -85,7 +85,7 @@ body[data-outdoor-mode="true"] {
   --surface: #1a201c;
   --surface-strong: #222b24;
   --ink: #e8ede9;
-  --muted: #8fa396;
+  --muted: #a3b6aa;
   --line: #354037;
   --green: #3dd98a;
   --green-dark: #1f7a4f;
@@ -1811,7 +1811,7 @@ body[data-android-app="true"] .menu-toggle {
   width: 3.4rem;
   height: 3.4rem;
   border-radius: 50%;
-  background: var(--primary);
+  background: var(--green);
   color: #fff;
   border: none;
   cursor: pointer;
@@ -3467,4 +3467,79 @@ select:focus {
 [data-theme="dark"] .pull-indicator {
   background: var(--surface-strong);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Dark mode toggle buttons — fix ghostly/ghost look */
+[data-theme="dark"] .outdoor-mode-toggle {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  color: var(--ink);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .outdoor-mode-toggle[aria-pressed="true"] {
+  background: var(--green-dark);
+  color: #ffffff;
+}
+
+/* Dark mode text contrast — eyebrow labels and stat sub-labels */
+[data-theme="dark"] .eyebrow,
+[data-theme="dark"] .dashboard-stat span {
+  color: var(--muted);
+}
+
+/* Section headers in dark mode */
+[data-theme="dark"] .section-head h2 {
+  color: var(--ink);
+}
+
+[data-theme="dark"] .section-head span {
+  color: var(--muted);
+}
+
+/* Dark mode status badges — light backgrounds wash out */
+[data-theme="dark"] .status-badge {
+  background: rgba(61, 217, 138, 0.15);
+  color: var(--green);
+}
+
+[data-theme="dark"] .status-badge[data-status*="assigned"],
+[data-theme="dark"] .status-badge[data-status*="scheduled"] {
+  background: rgba(109, 181, 224, 0.15);
+  color: var(--blue);
+}
+
+[data-theme="dark"] .status-badge[data-status*="pending"],
+[data-theme="dark"] .status-badge[data-status*="completed_pending_approval"] {
+  background: rgba(240, 178, 77, 0.15);
+  color: var(--gold);
+}
+
+[data-theme="dark"] .status-badge[data-status*="approved"],
+[data-theme="dark"] .status-badge[data-status*="completed"] {
+  background: rgba(61, 217, 138, 0.15);
+  color: var(--green);
+}
+
+[data-theme="dark"] .status-badge[data-status*="rejected"],
+[data-theme="dark"] .status-badge[data-status*="archived"] {
+  background: rgba(232, 112, 96, 0.15);
+  color: var(--red);
+}
+
+/* Dark mode dashboard action cards */
+[data-theme="dark"] .dashboard-action {
+  background: var(--surface-strong);
+}
+
+/* Dark mode mobile bottom nav — frosted glass was ghostly on dark bg */
+[data-theme="dark"] .mobile-bottom-nav {
+  background: rgba(34, 43, 36, 0.95);
+  border-color: var(--line);
+}
+
+/* Dark mode app update banner */
+[data-theme="dark"] .app-update-banner {
+  background: var(--surface-strong);
+  border-color: var(--line);
 }

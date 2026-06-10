@@ -12,23 +12,32 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">MACS Field App</p>
-        <h1>Crew Jobs</h1>
+        <h1>Today</h1>
         <p class="device-badge" data-auth-label>Loading access</p>
       </div>
       <div class="top-actions">
         <a class="ghost-button action-link" data-page="home" href="index.html">Home</a>
         <a class="ghost-button action-link" data-page="schedule" href="schedule.html">Schedule</a>
         <a class="ghost-button action-link" data-page="customers" href="customers.html">Customers</a>
-        <a class="ghost-button action-link" data-page="downloads" href="downloads.html">Downloads</a>
         <a class="ghost-button action-link" data-page="profile" href="profile.html">Profile</a>
+        <a class="ghost-button action-link" data-page="more" href="more.html">More</a>
         <button class="ghost-button" id="logout-admin" type="button">Logout</button>
       </div>
     </header>
 
     <main class="admin-shell">
+      <section class="field-command-card schedule-wide">
+        <div>
+          <p class="eyebrow">Route command</p>
+          <h2 id="crew-next-title">Loading today’s work</h2>
+          <p id="crew-next-detail">Checking assigned jobs and route actions.</p>
+        </div>
+        <div id="crew-stats" class="field-stat-grid"></div>
+      </section>
+
       <section class="admin-card schedule-wide">
         <div class="section-head">
-          <h2>Today’s Route</h2>
+          <h2>Assigned Route</h2>
           <span id="crew-route-summary">No pricing visible in crew mode</span>
         </div>
         <div id="crew-list" class="crew-list"></div>

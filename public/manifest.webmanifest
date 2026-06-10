@@ -2,7 +2,7 @@
   "name": "MACS LawnQuote",
   "short_name": "MACS",
   "description": "MACS quoting, scheduling, crew, customer, invoice, and field-service app.",
-  "start_url": "index.html",
+  "start_url": "crew.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -28,9 +28,14 @@
       "url": "schedule.html"
     },
     {
-      "name": "Crew Route",
-      "short_name": "Crew",
+      "name": "Today",
+      "short_name": "Today",
       "url": "crew.html"
+    },
+    {
+      "name": "More",
+      "short_name": "More",
+      "url": "more.html"
     }
   ]
 }

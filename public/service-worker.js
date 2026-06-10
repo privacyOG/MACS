@@ -1,4 +1,4 @@
-const CACHE_NAME = "macs-lawnquote-ui-v5";
+const CACHE_NAME = "macs-lawnquote-ui-v6";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -12,6 +12,8 @@ const CORE_ASSETS = [
   "./crew.js",
   "./profile.html",
   "./profile.js",
+  "./more.html",
+  "./more.js",
   "./downloads.html",
   "./downloads.js",
   "./quote.html",

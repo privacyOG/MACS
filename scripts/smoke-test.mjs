@@ -11,6 +11,7 @@ const requiredFiles = [
   "public/security.html",
   "public/schedule.html",
   "public/downloads.html",
+  "public/more.html",
   "public/quote.html",
   "public/styles.css",
   "public/auth.js",
@@ -18,6 +19,7 @@ const requiredFiles = [
   "public/security.js",
   "public/schedule.js",
   "public/downloads.js",
+  "public/more.js",
   "public/app.js",
   "scripts/mail-outbox-worker.mjs",
   "public/manifest.webmanifest",
@@ -56,8 +58,13 @@ for (const token of ["recurring-form", "recurring-list", "quote-schedule-list", 
 }
 
 const downloadsHtml = await readFile(path.join(root, "public/downloads.html"), "utf8");
-for (const token of ["MACS Downloads", "About the App", "App Info", "Android 7.0 and above", "macs-lawnquote-android-v1.0.9.apk"]) {
+for (const token of ["MACS Downloads", "About the App", "App Info", "Android 7.0 and above", "macs-lawnquote-android-v1.0.10.apk"]) {
   if (!downloadsHtml.includes(token)) throw new Error(`Missing expected downloads token: ${token}`);
+}
+
+const moreHtml = await readFile(path.join(root, "public/more.html"), "utf8");
+for (const token of ["MACS More", "Field app hub", "Reset app session", "more.js"]) {
+  if (!moreHtml.includes(token)) throw new Error(`Missing expected more token: ${token}`);
 }
 
 const quoteHtml = await readFile(path.join(root, "public/quote.html"), "utf8");

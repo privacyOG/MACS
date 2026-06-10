@@ -13,6 +13,10 @@ let inactivityBound = false;
 let inactivityMinutes = 30;
 let androidUpdateCheckStarted = false;
 
+function isAndroidApp() {
+  return navigator.userAgent.includes("MACS-LawnQuote-Android");
+}
+
 export function startInactivityLogout(minutes = 30) {
   inactivityMinutes = Math.max(5, Math.min(240, Number(minutes || 30)));
   function resetTimer() {
@@ -62,7 +66,7 @@ export async function logoutAdmin() {
   try {
     await api("/api/auth/logout", {});
   } finally {
-    if (navigator.userAgent.includes("MACS-LawnQuote-Android")) {
+    if (isAndroidApp()) {
       if (window.MacsAndroid?.logoutToLogin) {
         window.MacsAndroid.logoutToLogin();
         return;
@@ -71,6 +75,25 @@ export async function logoutAdmin() {
     } else {
       location.replace("admin.html");
     }
+  }
+}
+
+export async function resetAndroidAppSession() {
+  clearTimeout(inactivityTimer);
+  try {
+    await api("/api/auth/logout", {});
+  } finally {
+    if (window.MacsAndroid?.resetAppData) {
+      window.MacsAndroid.resetAppData();
+      return;
+    }
+    if (window.MacsAndroid?.logoutToLogin) {
+      window.MacsAndroid.logoutToLogin();
+      return;
+    }
+    localStorage.clear();
+    sessionStorage.clear();
+    location.replace(`admin.html?logout=1&reset=1&t=${Date.now()}`);
   }
 }
 
@@ -299,13 +322,13 @@ export async function adminSecurityStatus() {
 }
 
 export function canAccessPage(user, page) {
-  const isAndroidApp = navigator.userAgent.includes("MACS-LawnQuote-Android");
-  if (isAndroidApp) {
+  if (isAndroidApp()) {
     if (!user) return ["admin", "downloads"].includes(page);
-    return ["schedule", "crew", "profile", "downloads"].includes(page);
+    return ["schedule", "crew", "profile", "more", "downloads"].includes(page);
   }
   if (page === "home") return true;
   if (page === "downloads") return true;
+  if (page === "more") return true;
   if (!user) return ["admin", "schedule", "quote"].includes(page);
   if (page === "profile") return true;
   if (page === "admin") return user.role === "owner" || user.role === "leader";
@@ -325,7 +348,15 @@ const navItems = [
   { page: "schedule", href: "schedule.html", icon: "▦", label: "Schedule" },
   { page: "crew", href: "crew.html", icon: "◉", label: "Crew" },
   { page: "downloads", href: "downloads.html", icon: "⇩", label: "Downloads" },
-  { page: "profile", href: "profile.html", icon: "◎", label: "Profile" }
+  { page: "profile", href: "profile.html", icon: "◎", label: "Profile" },
+  { page: "more", href: "more.html", icon: "⋯", label: "More" }
+];
+
+const androidNavItems = [
+  { page: "crew", href: "crew.html", icon: "◉", label: "Today" },
+  { page: "schedule", href: "schedule.html", icon: "▦", label: "Schedule" },
+  { page: "profile", href: "profile.html", icon: "◎", label: "Profile" },
+  { page: "more", href: "more.html", icon: "⋯", label: "More" }
 ];
 
 function currentPageKey() {
@@ -340,7 +371,8 @@ function setupBottomNavigation(user) {
   nav.className = "mobile-bottom-nav";
   nav.setAttribute("aria-label", "Primary app navigation");
   const activePage = currentPageKey();
-  for (const item of navItems) {
+  const items = isAndroidApp() && user ? androidNavItems : navItems;
+  for (const item of items) {
     if (!canAccessPage(user, item.page)) continue;
     const link = document.createElement("a");
     link.href = item.href;
@@ -352,6 +384,30 @@ function setupBottomNavigation(user) {
     nav.append(link);
   }
   if (nav.children.length) document.body.append(nav);
+}
+
+function setupLoggedOutResetPanel() {
+  const params = new URLSearchParams(location.search);
+  const shouldShow = currentPageKey() === "admin" && (params.has("logout") || params.has("loggedout") || params.has("timeout") || params.has("reset"));
+  if (!shouldShow || document.querySelector(".logout-reset-panel")) return;
+  const authPanel = document.querySelector("#auth-panel");
+  if (!authPanel) return;
+  const panel = document.createElement("article");
+  panel.className = "admin-card logout-reset-panel";
+  const title = params.has("timeout") ? "Session timed out" : "You are logged out";
+  const body = isAndroidApp()
+    ? "The app has cleared the protected view. If this phone still shows old pages, reset the app session below."
+    : "Use the login form to open MACS again.";
+  panel.innerHTML = `
+    <div class="section-head">
+      <h2>${title}</h2>
+      <span>Secure session closed</span>
+    </div>
+    <p>${body}</p>
+    ${isAndroidApp() ? `<button class="secondary-button" id="reset-android-session" type="button">Reset app session</button>` : ""}
+  `;
+  authPanel.prepend(panel);
+  panel.querySelector("#reset-android-session")?.addEventListener("click", resetAndroidAppSession);
 }
 
 function setupOutdoorModeToggle() {
@@ -495,27 +551,28 @@ async function checkAndroidAppUpdate() {
 export async function initAccessibleNavigation() {
   const status = await authStatus();
   const user = status.user || null;
-  const isAndroidApp = navigator.userAgent.includes("MACS-LawnQuote-Android");
+  const androidApp = isAndroidApp();
   const currentAndroidVersion = androidAppVersion();
-  document.body.dataset.androidApp = isAndroidApp ? "true" : "false";
+  document.body.dataset.androidApp = androidApp ? "true" : "false";
   document.body.dataset.androidAppVersion = currentAndroidVersion;
   document.body.dataset.loggedIn = user ? "true" : "false";
   document.body.dataset.role = user?.role || "guest";
-  document.body.classList.toggle("login-only", isAndroidApp && !user && currentPageKey() === "admin");
-  if (isAndroidApp && compareVersions(currentAndroidVersion, "1.0.4") < 0) {
+  document.body.classList.toggle("login-only", androidApp && !user && currentPageKey() === "admin");
+  setupLoggedOutResetPanel();
+  if (androidApp && compareVersions(currentAndroidVersion, "1.0.4") < 0) {
     document.documentElement.style.setProperty("--android-status-offset", "48px");
   }
-  if (isAndroidApp) checkAndroidAppUpdate();
+  if (androidApp) checkAndroidAppUpdate();
   const currentPage = location.pathname.split("/").pop() || "index.html";
-  if (isAndroidApp && !user && !["admin.html", "downloads.html"].includes(currentPage)) {
+  if (androidApp && !user && !["admin.html", "downloads.html"].includes(currentPage)) {
     location.replace(`admin.html?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`);
     return { status, user };
   }
-  if (isAndroidApp && user && !["schedule.html", "crew.html", "profile.html", "downloads.html"].includes(currentPage)) {
+  if (androidApp && user && !["crew.html", "schedule.html", "profile.html", "more.html", "downloads.html"].includes(currentPage)) {
     if (currentPage === "admin.html" && (new URLSearchParams(location.search).has("logout") || new URLSearchParams(location.search).has("loggedout"))) {
       document.body.classList.add("login-only");
     } else {
-      location.replace("schedule.html");
+      location.replace("crew.html");
     }
     return { status, user };
   }

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f7a4f" />
+    <title>MACS More</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-page more-page">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MACS App</p>
+        <h1>More</h1>
+        <p class="device-badge" data-auth-label>Loading access</p>
+      </div>
+      <div class="top-actions">
+        <a class="ghost-button action-link" data-page="schedule" href="schedule.html">Schedule</a>
+        <a class="ghost-button action-link" data-page="crew" href="crew.html">Today</a>
+        <a class="ghost-button action-link" data-page="profile" href="profile.html">Profile</a>
+        <a class="ghost-button action-link" data-page="downloads" href="downloads.html">Downloads</a>
+        <button class="ghost-button" id="logout-admin" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="admin-shell">
+      <section class="admin-card settings-hero schedule-wide">
+        <div>
+          <p class="eyebrow">Field app hub</p>
+          <h2>Settings, downloads, and account actions</h2>
+          <p>Use this screen for app updates, session reset, and less common MACS areas.</p>
+        </div>
+        <div class="settings-status" id="app-version-status">Checking app version</div>
+      </section>
+
+      <section class="settings-grid">
+        <a class="settings-tile" data-page="downloads" href="downloads.html">
+          <span>Update</span>
+          <strong>Android App Download</strong>
+          <small>Install the latest APK or copy the download link</small>
+        </a>
+        <a class="settings-tile" data-page="schedule" href="schedule.html">
+          <span>Work</span>
+          <strong>Schedule</strong>
+          <small>View rostered jobs and weekly planning</small>
+        </a>
+        <a class="settings-tile" data-page="crew" href="crew.html">
+          <span>Field</span>
+          <strong>Today’s Route</strong>
+          <small>Navigate, check in, SMS, and complete jobs</small>
+        </a>
+        <a class="settings-tile" data-page="profile" href="profile.html">
+          <span>Account</span>
+          <strong>Profile & Credentials</strong>
+          <small>Update contact details and stored credentials</small>
+        </a>
+        <a class="settings-tile" data-page="admin" href="admin.html">
+          <span>Admin</span>
+          <strong>Operations Admin</strong>
+          <small>Owner and leader controls</small>
+        </a>
+        <a class="settings-tile" data-page="reports" href="reports.html">
+          <span>Reports</span>
+          <strong>Timesheets</strong>
+          <small>Review staff time and completed work</small>
+        </a>
+      </section>
+
+      <section class="admin-card schedule-wide">
+        <div class="section-head">
+          <h2>Session</h2>
+          <span>Phone reset and logout</span>
+        </div>
+        <p class="device-badge">If this phone ever shows an old protected screen after logout, use Reset app session.</p>
+        <div class="inline-actions settings-actions">
+          <button class="secondary-button" id="reset-android-session" type="button">Reset app session</button>
+          <button class="danger-button" id="logout-admin-secondary" type="button">Logout</button>
+        </div>
+        <p id="more-message" class="auth-message" data-tone="info"></p>
+      </section>
+    </main>
+
+    <script src="more.js" type="module"></script>
+  </body>
+</html>

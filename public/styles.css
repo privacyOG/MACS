@@ -848,6 +848,10 @@ body.login-only .outdoor-mode-toggle {
   color: #ffffff;
 }
 
+.mobile-bottom-nav a strong {
+  letter-spacing: 0;
+}
+
 .outdoor-mode-toggle {
   position: fixed;
   right: 0.85rem;
@@ -957,6 +961,170 @@ body.login-only .outdoor-mode-toggle {
   color: var(--muted);
   font-weight: 750;
   line-height: 1.35;
+}
+
+.field-command-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid rgba(31, 122, 79, 0.22);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #155a39, #1f7a4f);
+  color: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.field-command-card h2 {
+  margin-bottom: 0.4rem;
+  font-size: clamp(1.35rem, 4vw, 2.1rem);
+  line-height: 1.08;
+}
+
+.field-command-card p {
+  margin-bottom: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.field-command-card .eyebrow {
+  color: #b7e88e;
+}
+
+.field-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.field-stat {
+  display: grid;
+  gap: 0.2rem;
+  min-height: 4.7rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.field-stat span {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.field-stat strong {
+  align-self: end;
+  color: #ffffff;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.field-note {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.field-note textarea {
+  min-height: 4rem;
+  resize: vertical;
+  text-transform: none;
+  font-weight: 700;
+}
+
+.field-action-button {
+  min-height: 2.75rem;
+  min-width: 7.2rem;
+  padding: 0 0.85rem;
+  font-size: 0.82rem;
+}
+
+.settings-hero {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border-color: rgba(31, 122, 79, 0.2);
+  background: #f7fbf4;
+}
+
+.settings-hero h2 {
+  margin-bottom: 0.35rem;
+  color: var(--green-dark);
+  font-size: clamp(1.2rem, 3vw, 1.65rem);
+}
+
+.settings-hero p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.settings-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #cfe1c8;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--green-dark);
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.settings-tile {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 8.2rem;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  box-shadow: var(--shadow);
+}
+
+.settings-tile:hover {
+  border-color: var(--green);
+  background: #f2f8ef;
+}
+
+.settings-tile span {
+  color: var(--green);
+  font-size: 0.74rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.settings-tile strong {
+  align-self: end;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
+.settings-tile small {
+  color: var(--muted);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.settings-actions {
+  flex-wrap: wrap;
 }
 
 .quote-stepper {
@@ -2371,6 +2539,7 @@ select:focus {
   .service-grid,
   .workflow-grid,
   .ops-grid,
+  .settings-grid,
   .customer-history-grid,
   .worklog-form,
   .customer-edit-form {
@@ -2576,6 +2745,9 @@ select:focus {
   .workflow-grid,
   .ops-grid,
   .ops-kpis,
+  .field-command-card,
+  .settings-hero,
+  .settings-grid,
   .customer-card-head,
   .customer-history-grid,
   .route-job,
@@ -2589,6 +2761,16 @@ select:focus {
   .crew-actions,
   .customer-card-kpis {
     justify-content: stretch;
+  }
+
+  .field-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .field-action-button,
+  .crew-actions a,
+  .crew-actions button {
+    width: 100%;
   }
 
   .home-menu-card {
@@ -2750,6 +2932,7 @@ select:focus {
   .result-card,
   .ops-panel,
   .home-menu-card,
+  .settings-tile,
   .service-grid article {
     padding: 0.75rem;
   }

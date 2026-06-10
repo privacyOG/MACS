@@ -3,6 +3,9 @@ import { authStatus, completeRosterJob, initAccessibleNavigation, listRosterJobs
 const crewList = document.querySelector("#crew-list");
 const routeSummary = document.querySelector("#crew-route-summary");
 const logoutButton = document.querySelector("#logout-admin");
+const crewStats = document.querySelector("#crew-stats");
+const nextTitle = document.querySelector("#crew-next-title");
+const nextDetail = document.querySelector("#crew-next-detail");
 
 let currentUser = null;
 let rosterJobs = [];
@@ -54,6 +57,41 @@ function visibleJobs() {
     .sort((a, b) => `${a.scheduledDate || ""} ${a.startTime || ""}`.localeCompare(`${b.scheduledDate || ""} ${b.startTime || ""}`));
 }
 
+function renderFieldStats(jobs) {
+  const today = dateValue(new Date());
+  const todayJobs = jobs.filter((job) => job.scheduledDate === today);
+  const checkedIn = jobs.filter((job) => job.actualStartTime && !job.actualFinishTime).length;
+  const awaitingApproval = jobs.filter((job) => job.status === "completed_pending_approval").length;
+  const stats = [
+    ["Today", todayJobs.length],
+    ["Upcoming", jobs.length],
+    ["Checked in", checkedIn],
+    ["Awaiting approval", awaitingApproval]
+  ];
+  crewStats.replaceChildren(...stats.map(([label, value]) => {
+    const card = document.createElement("div");
+    card.className = "field-stat";
+    card.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
+    return card;
+  }));
+}
+
+function renderNextJob(jobs) {
+  const today = dateValue(new Date());
+  const next = jobs.find((job) => job.scheduledDate === today && !job.actualFinishTime) || jobs.find((job) => !job.actualFinishTime) || jobs[0];
+  if (!next) {
+    nextTitle.textContent = "No assigned jobs";
+    nextDetail.textContent = "Nothing is currently assigned to this route.";
+    return;
+  }
+  nextTitle.textContent = next.title || next.customerName || next.address || "Next roster job";
+  nextDetail.textContent = [
+    dateLabel(next.scheduledDate),
+    `${next.startTime || "No start"}-${next.finishTime || "No finish"}`,
+    next.address || "No address saved"
+  ].join(" · ");
+}
+
 async function saveCheck(job, patch, button) {
   button.disabled = true;
   const result = await saveRosterWorklog({
@@ -86,6 +124,8 @@ async function submitComplete(job, button) {
 
 function renderCrewJobs() {
   const jobs = visibleJobs();
+  renderFieldStats(jobs);
+  renderNextJob(jobs);
   if (!jobs.length) {
     crewList.innerHTML = `<p class="empty-state">No upcoming assigned jobs.</p>`;
     routeSummary.textContent = "No pricing visible in crew mode";
@@ -111,12 +151,17 @@ function renderCrewJobs() {
           <span class="app-chip">${job.actualStartTime ? `Checked in ${job.actualStartTime}` : "Not checked in"}</span>
           <span class="app-chip">${job.actualFinishTime ? `Completed ${job.actualFinishTime}` : "Open"}</span>
         </div>
+        <label class="field-note">
+          Field notes
+          <textarea data-field-note rows="2" placeholder="Gate code, access issue, work completed">${job.workNotes || ""}</textarea>
+        </label>
       </div>
       <div class="crew-actions">
-        <a class="secondary-button compact-button" href="${mapUrl(job.address)}" target="_blank" rel="noreferrer">Route</a>
-        ${sms ? `<a class="secondary-button compact-button" href="${sms}">On my way SMS</a>` : ""}
-        <button class="secondary-button compact-button" type="button" data-action="checkin">Check in</button>
-        <button class="primary-button compact-button" type="button" data-action="complete">Complete Job</button>
+        <a class="secondary-button field-action-button" href="${mapUrl(job.address)}" target="_blank" rel="noreferrer">Route</a>
+        ${sms ? `<a class="secondary-button field-action-button" href="${sms}">On my way SMS</a>` : ""}
+        <button class="secondary-button field-action-button" type="button" data-action="checkin">Check in</button>
+        <button class="secondary-button field-action-button" type="button" data-action="save-note">Save notes</button>
+        <button class="primary-button field-action-button" type="button" data-action="complete">Complete Job</button>
       </div>
     `;
     item.querySelector('[data-action="checkin"]').addEventListener("click", (event) => {
@@ -125,6 +170,10 @@ function renderCrewJobs() {
     });
     item.querySelector('[data-action="complete"]').addEventListener("click", (event) => {
       submitComplete(job, event.currentTarget);
+    });
+    item.querySelector('[data-action="save-note"]').addEventListener("click", (event) => {
+      const note = item.querySelector("[data-field-note]").value.trim();
+      saveCheck(job, { workNotes: note }, event.currentTarget);
     });
     return item;
   }));

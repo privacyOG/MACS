@@ -29,7 +29,7 @@ import java.io.FileOutputStream;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
-    private static final String APP_URL = "https://macs.rctrusts.com/schedule.html";
+    private static final String APP_URL = "https://macs.rctrusts.com/crew.html";
     private static final String LOGIN_URL = "https://macs.rctrusts.com/admin.html";
     private static final String APP_HOST = "macs.rctrusts.com";
     private static final int FILE_CHOOSER_REQUEST = 1001;
@@ -154,9 +154,10 @@ public class MainActivity extends Activity {
                 openExternal(uri);
                 return true;
             }
-            if (!path.endsWith("/schedule.html")
-                && !path.endsWith("/crew.html")
+            if (!path.endsWith("/crew.html")
+                && !path.endsWith("/schedule.html")
                 && !path.endsWith("/profile.html")
+                && !path.endsWith("/more.html")
                 && !path.endsWith("/downloads.html")
                 && !path.endsWith("/admin.html")) {
                 webView.loadUrl(APP_URL);
@@ -231,6 +232,14 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 clearWebSession();
                 webView.loadUrl(LOGIN_URL + "?logout=1&t=" + System.currentTimeMillis());
+            });
+        }
+
+        @JavascriptInterface
+        public void resetAppData() {
+            runOnUiThread(() -> {
+                clearWebSession();
+                webView.loadUrl(LOGIN_URL + "?logout=1&reset=1&t=" + System.currentTimeMillis());
             });
         }
 

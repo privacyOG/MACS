@@ -546,6 +546,22 @@ video {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface-strong);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* Subtle card hover lift (desktop) and press feedback (mobile) */
+.route-job:hover,
+.crew-job:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .route-job:active,
+  .crew-job:active {
+    transform: scale(0.985);
+    box-shadow: inset 0 1px 6px rgba(0,0,0,0.1);
+  }
 }
 
 /* Pull-to-refresh indicator */
@@ -1620,6 +1636,12 @@ body[data-android-app="true"] .menu-toggle {
   border-radius: 8px;
   background: rgba(255, 253, 247, 0.95);
   box-shadow: var(--shadow);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.admin-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
 }
 
 .dashboard-card {

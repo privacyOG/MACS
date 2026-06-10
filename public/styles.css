@@ -60,6 +60,57 @@ body[data-outdoor-mode="true"] {
   background: #ffffff;
 }
 
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #131715;
+    --surface: #1a201c;
+    --surface-strong: #222b24;
+    --ink: #e8ede9;
+    --muted: #8fa396;
+    --line: #354037;
+    --green: #3dd98a;
+    --green-dark: #1f7a4f;
+    --gold: #f0b24d;
+    --red: #e87060;
+    --blue: #6db5e0;
+    --shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #131715;
+  --surface: #1a201c;
+  --surface-strong: #222b24;
+  --ink: #e8ede9;
+  --muted: #8fa396;
+  --line: #354037;
+  --green: #3dd98a;
+  --green-dark: #1f7a4f;
+  --gold: #f0b24d;
+  --red: #e87060;
+  --blue: #6db5e0;
+  --shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+}
+
+body[data-theme="dark"] {
+  background:
+    linear-gradient(rgba(61, 217, 138, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(109, 181, 224, 0.03) 1px, transparent 1px),
+    var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not([data-theme="light"]) {
+    background:
+      linear-gradient(rgba(61, 217, 138, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(109, 181, 224, 0.03) 1px, transparent 1px),
+      var(--bg);
+  }
+}
+
 body[data-outdoor-mode="true"] .admin-card,
 body[data-outdoor-mode="true"] .form-section,
 body[data-outdoor-mode="true"] .result-card,
@@ -3315,4 +3366,77 @@ select:focus {
   #print-price {
     font-size: 28pt;
   }
+}
+
+/* Dark mode surface overrides — targets hardcoded white backgrounds */
+[data-theme="dark"] .admin-card,
+[data-theme="dark"] .form-section,
+[data-theme="dark"] .result-card,
+[data-theme="dark"] .ops-panel,
+[data-theme="dark"] .home-menu-card,
+[data-theme="dark"] .settings-tile,
+[data-theme="dark"] .service-grid article {
+  background: var(--surface-strong);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .route-job,
+[data-theme="dark"] .crew-job,
+[data-theme="dark"] .calendar-job,
+[data-theme="dark"] .customer-card,
+[data-theme="dark"] .invoice-card {
+  background: var(--surface-strong);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .week-day {
+  background: var(--surface-strong);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .calendar-job {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .primary-button,
+[data-theme="dark"] .secondary-button,
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--surface-strong);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .ghost-button {
+  background: transparent;
+}
+
+[data-theme="dark"] .hero-logo-lockup {
+  background: var(--surface-strong);
+}
+
+[data-theme="dark"] .home-menu-card:hover {
+  background: var(--surface-strong);
+  border-color: var(--green);
+}
+
+[data-theme="dark"] .site-nav a:hover {
+  background: rgba(61, 217, 138, 0.1);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .download-app-card,
+[data-theme="dark"] .app-update-actions {
+  background: var(--surface-strong);
+}
+
+[data-theme="dark"] .auth-message[data-tone="info"],
+[data-theme="dark"] .empty-state {
+  color: var(--muted);
+}
+
+[data-theme="dark"] .pull-indicator {
+  background: var(--surface-strong);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }

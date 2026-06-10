@@ -463,6 +463,28 @@ function setupOutdoorModeToggle() {
   document.body.append(button);
 }
 
+function setupDarkModeToggle() {
+  if (document.querySelector(".dark-mode-toggle")) return;
+  const stored = localStorage.getItem("macs.darkTheme");
+  let enabled = stored === "1" || (stored !== "0" && window.matchMedia("prefers-color-scheme: dark").matches);
+  document.documentElement.dataset.theme = enabled ? "dark" : "light";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "outdoor-mode-toggle dark-mode-toggle";
+  button.setAttribute("aria-pressed", String(enabled));
+  button.setAttribute("aria-label", "Toggle dark mode");
+  button.innerHTML = `<span aria-hidden="true">${enabled ? "🌙" : "☀️"}</span><strong>${enabled ? "Dark on" : "Dark"}</strong>`;
+  button.addEventListener("click", () => {
+    enabled = !enabled;
+    document.documentElement.dataset.theme = enabled ? "dark" : "light";
+    localStorage.setItem("macs.darkTheme", enabled ? "1" : "0");
+    button.setAttribute("aria-pressed", String(enabled));
+    button.querySelector("span").textContent = enabled ? "🌙" : "☀️";
+    button.querySelector("strong").textContent = enabled ? "Dark on" : "Dark";
+  });
+  document.body.append(button);
+}
+
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   navigator.serviceWorker.register("./service-worker.js").catch(() => {});
@@ -629,6 +651,7 @@ export async function initAccessibleNavigation() {
   setupResponsiveNavigationMenus();
   setupBottomNavigation(user);
   setupOutdoorModeToggle();
+  setupDarkModeToggle();
   registerServiceWorker();
   return { status, user };
 }

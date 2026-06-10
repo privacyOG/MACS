@@ -214,7 +214,7 @@ function enhancePasswordFields() {
 
 function currentNextUrl() {
   const next = new URLSearchParams(location.search).get("next");
-  return next || (navigator.userAgent.includes("MACS-LawnQuote-Android") ? "crew.html" : "quote.html");
+  return next || (navigator.userAgent.includes("MACS-LawnQuote-Android") ? "schedule.html" : "quote.html");
 }
 
 function quoteId(quote) {

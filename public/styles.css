@@ -800,6 +800,11 @@ body.login-only .outdoor-mode-toggle {
   display: none;
 }
 
+body[data-android-app="true"] .top-actions,
+body[data-android-app="true"] .menu-toggle {
+  display: none !important;
+}
+
 .mobile-bottom-nav {
   position: fixed;
   right: 0.65rem;
@@ -2585,13 +2590,14 @@ select:focus {
   }
 
   .top-actions {
-    display: grid;
+    display: none;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
   }
 
   .top-actions.responsive-menu,
   .site-nav nav.responsive-menu {
+    display: grid;
     grid-column: 1 / -1;
     max-height: 0;
     overflow: hidden;

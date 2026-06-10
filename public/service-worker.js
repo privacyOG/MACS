@@ -1,4 +1,4 @@
-const CACHE_NAME = "macs-lawnquote-ui-v7";
+const CACHE_NAME = "macs-lawnquote-ui-v8";
 const CORE_ASSETS = [
   "./offline.html",
   "./styles.css",

@@ -1461,7 +1461,14 @@ async function handleAuth(req, res, url) {
       sendJson(res, 423, { ok: false, message: "This account is locked after too many failed login attempts. Owner Admin must unlock it." });
       return true;
     }
-    if (!verifySecret(password, user.salt, user.passwordHash)) {
+
+    let passwordOk = verifySecret(password, user.salt, user.passwordHash);
+
+    if (!passwordOk && user.passwordScheme === "scrypt" && body.password) {
+      passwordOk = verifySecret(body.password, user.salt, user.passwordHash);
+    }
+
+    if (!passwordOk) {
       if (!user.passwordScheme && body.passwordHash && !body.migrateLegacyPassword) {
         sendJson(res, 409, {
           ok: false,
@@ -1473,7 +1480,10 @@ async function handleAuth(req, res, url) {
       if (!user.passwordScheme && body.migrateLegacyPassword && body.passwordHash && verifySecret(body.password || "", user.salt, user.passwordHash)) {
         user.passwordHash = hashSecret(String(body.passwordHash).toLowerCase(), user.salt);
         user.passwordScheme = "client-sha256";
-      } else {
+        passwordOk = true;
+      }
+
+      if (!passwordOk) {
         recordFailedLogin(user);
         admin.updatedAt = new Date().toISOString();
         await writeAdmin(admin);

@@ -1654,27 +1654,123 @@ async function handleAuth(req, res, url) {
     return true;
   }
 
+  // --- Request an email-based recovery token (no login required) ---
+  if (req.method === "POST" && url.pathname === "/api/auth/recover/request") {
+    const body = await readJsonBody(req);
+    const identifier = normaliseIdentifier(body.identifier || body.email || body.username);
+    if (!identifier) {
+      sendJson(res, 400, { ok: false, message: "Enter your email or username." });
+      return true;
+    }
+    const user = admin.users.find((item) => item.email === identifier || item.username === identifier);
+    // Always respond OK to avoid enumerating accounts
+    if (!user || !user.email) {
+      sendJson(res, 200, { ok: true, message: "If the account exists, a recovery email has been sent." });
+      return true;
+    }
+    const token = randomBytes(16).toString("hex");
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    user.emailRecoveryToken = hashSecret(token, user.salt);
+    user.emailRecoveryExpires = expiresAt.toISOString();
+    admin.updatedAt = new Date().toISOString();
+    await writeAdmin(admin);
+    const notification = await sendSecurityEmail(user.email, "MACS account recovery code", [
+      `You requested a password recovery for your MACS account.`,
+      ``,
+      `Username: ${user.username}`,
+      `Recovery token: ${token}`,
+      `Expires: ${expiresAt.toLocaleString()}`,
+      ``,
+      `Enter this token on the login page to reset your password.`,
+      `If you have 2FA enabled, you will also need a code from your authenticator app.`,
+      ``,
+      `If you did not request this, please ignore this email.`
+    ].join("\n"));
+    sendJson(res, 200, {
+      ok: true,
+      message: "If the account exists, a recovery email has been sent.",
+      notificationSent: Boolean(notification?.sentAt)
+    });
+    return true;
+  }
+
+// --- Recover password (recoveryCode OR emailToken + optional 2FA) ---
   if (req.method === "POST" && url.pathname === "/api/auth/recover") {
     const body = await readJsonBody(req);
     const identifier = normaliseIdentifier(body.identifier || body.email || body.username);
     const user = admin.users.find((item) => item.email === identifier || item.username === identifier);
     const nextPassword = passwordCredential(body, "nextPassword");
-    if (!user || !verifySecret(body.recoveryCode || "", user.salt, user.recoveryHash)) {
-      sendJson(res, 401, { ok: false, message: "Recovery code is incorrect." });
+
+    // --- Path A: legacy recovery code (original flow) ---
+    if (body.recoveryCode) {
+      if (!user || !verifySecret(body.recoveryCode || "", user.salt, user.recoveryHash)) {
+        sendJson(res, 401, { ok: false, message: "Recovery code is incorrect." });
+        return true;
+      }
+      if (!nextPassword) {
+        sendJson(res, 400, { ok: false, message: "Use at least 8 characters for the new password." });
+        return true;
+      }
+      const nextRecoveryCode = recoveryCode();
+      user.passwordHash = hashSecret(nextPassword, user.salt);
+      user.passwordScheme = "client-sha256";
+      user.recoveryHash = hashSecret(nextRecoveryCode, user.salt);
+      unlockUser(user, { username: "recovery-code" });
+      delete user.emailRecoveryToken;
+      delete user.emailRecoveryExpires;
+      user.updatedAt = new Date().toISOString();
+      admin.updatedAt = new Date().toISOString();
+      await writeAdmin(admin);
+      sendJson(res, 200, { ok: true, recoveryCode: nextRecoveryCode });
       return true;
     }
-    if (!nextPassword) {
-      sendJson(res, 400, { ok: false, message: "Use at least 8 characters for the new password." });
+
+    // --- Path B: email-based token + optional 2FA verification ---
+    if (body.emailToken) {
+      if (!user || !user.emailRecoveryToken) {
+        sendJson(res, 401, { ok: false, message: "No recovery request found. Request a new one first." });
+        return true;
+      }
+      // Check expiry
+      if (new Date(user.emailRecoveryExpires) < new Date()) {
+        delete user.emailRecoveryToken;
+        delete user.emailRecoveryExpires;
+        await writeAdmin(admin);
+        sendJson(res, 401, { ok: false, message: "Recovery token has expired. Request a new one." });
+        return true;
+      }
+      if (!verifySecret(body.emailToken || "", user.salt, user.emailRecoveryToken)) {
+        sendJson(res, 401, { ok: false, message: "Invalid recovery token." });
+        return true;
+      }
+      // If 2FA is enabled on this account, require a valid TOTP code
+      if (user.twoFactorEnabled && user.twoFactorSecret) {
+        const twoFaCode = String(body.twoFactorCode || "").trim();
+        if (!twoFaCode || !verifyTotp(user.twoFactorSecret, twoFaCode)) {
+          sendJson(res, 401, { ok: false, message: "2FA code is required. Enter a valid 6-digit code from your authenticator app." });
+          return true;
+        }
+      }
+      if (!nextPassword) {
+        sendJson(res, 400, { ok: false, message: "Use at least 8 characters for the new password." });
+        return true;
+      }
+      const nextRecoveryCode = recoveryCode();
+      user.passwordHash = hashSecret(nextPassword, user.salt);
+      user.passwordScheme = "client-sha256";
+      user.recoveryHash = hashSecret(nextRecoveryCode, user.salt);
+      unlockUser(user, { username: "email-recovery" });
+      delete user.emailRecoveryToken;
+      delete user.emailRecoveryExpires;
+      user.updatedAt = new Date().toISOString();
+      admin.updatedAt = new Date().toISOString();
+      await writeAdmin(admin);
+      sendJson(res, 200, { ok: true, recoveryCode: nextRecoveryCode });
       return true;
     }
-    const nextRecoveryCode = recoveryCode();
-    user.passwordHash = hashSecret(nextPassword, user.salt);
-    user.passwordScheme = "client-sha256";
-    user.recoveryHash = hashSecret(nextRecoveryCode, user.salt);
-    user.updatedAt = new Date().toISOString();
-    admin.updatedAt = new Date().toISOString();
-    await writeAdmin(admin);
-    sendJson(res, 200, { ok: true, recoveryCode: nextRecoveryCode });
+
+    // No valid method provided
+    sendJson(res, 400, { ok: false, message: "Provide a recovery code or request an email-based token first." });
     return true;
   }
 

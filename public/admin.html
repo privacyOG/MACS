@@ -88,17 +88,37 @@
         <article class="admin-card">
           <div class="section-head">
             <h2>Recover Password</h2>
-            <span>Uses saved recovery code</span>
+            <span>Email recovery or saved code</span>
           </div>
+          <!-- Step 1: Request a recovery email -->
+          <form id="recovery-request-form" class="admin-form">
+            <label>
+              Email or username
+              <input id="recovery-request-identifier" autocomplete="username" placeholder="email, username, or owner" />
+            </label>
+            <button class="secondary-button" type="submit">Send recovery email</button>
+          </form>
+          <!-- Step 2: Enter the token + new password -->
           <form id="recovery-form" class="admin-form">
             <label>
               Email or username
               <input id="recovery-identifier" autocomplete="username" placeholder="email, username, or owner" />
             </label>
-            <label>
-              Recovery code
-              <input id="recovery-code" autocomplete="off" />
-            </label>
+            <fieldset style="border:1px dashed var(--accent);padding:.75rem;border-radius:var(--radius);margin-bottom:1rem">
+              <legend style="font-size:.8rem;padding:0 .5rem">Recovery method</legend>
+              <label>
+                Recovery code (from setup)
+                <input id="recovery-code" autocomplete="off" placeholder="or leave blank for email token" />
+              </label>
+              <label style="margin-top:.75rem">
+                Email recovery token
+                <input id="recovery-email-token" autocomplete="off" placeholder="from the recovery email, or leave blank" />
+              </label>
+              <label style="margin-top:.75rem">
+                2FA code (if enabled)
+                <input id="recovery-2fa-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit authenticator code" />
+              </label>
+            </fieldset>
             <label>
               New password
               <input id="recovery-new-password" type="password" autocomplete="new-password" minlength="8" />

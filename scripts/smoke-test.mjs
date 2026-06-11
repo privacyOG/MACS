@@ -24,7 +24,7 @@ const requiredFiles = [
   "scripts/mail-outbox-worker.mjs",
   "public/manifest.webmanifest",
   "server.mjs",
-  "public/assets/macs-logo.jpg",
+  "public/assets/macs-logo.png",
   "public/assets/lawn-mower.jpg"
 ];
 
@@ -34,7 +34,7 @@ for (const file of requiredFiles) {
 }
 
 const html = await readFile(path.join(root, "public/index.html"), "utf8");
-for (const token of ["MACS Mowing & Cleaning Services", "quote.html", "admin.html", "schedule.html", "downloads.html", "assets/macs-logo.jpg", "assets/lawn-mower.jpg", "home-menu-card"]) {
+for (const token of ["MACS Services", "quote.html", "admin.html", "schedule.html", "downloads.html", "assets/macs-logo.png", "assets/lawn-mower.jpg", "home-menu-card"]) {
   if (!html.includes(token)) throw new Error(`Missing expected home token: ${token}`);
 }
 if (html.includes("upgrades")) throw new Error("Upgrade page links should not be present on home");
@@ -58,7 +58,7 @@ for (const token of ["recurring-form", "recurring-list", "quote-schedule-list", 
 }
 
 const downloadsHtml = await readFile(path.join(root, "public/downloads.html"), "utf8");
-for (const token of ["MACS Downloads", "About the App", "App Info", "Android 7.0 and above", "macs-lawnquote-android-v1.0.13.apk"]) {
+for (const token of ["MACS Downloads", "About the App", "App Info", "Android 7.0 and above", "macs-lawnquote-android-v1.0.16.apk"]) {
   if (!downloadsHtml.includes(token)) throw new Error(`Missing expected downloads token: ${token}`);
 }
 

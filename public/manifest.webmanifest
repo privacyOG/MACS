@@ -1,5 +1,5 @@
 {
-  "name": "MACS LawnQuote",
+  "name": "MACS Services",
   "short_name": "MACS",
   "description": "MACS quoting, scheduling, crew, customer, invoice, and field-service app.",
   "start_url": "crew.html",
@@ -10,9 +10,9 @@
   "theme_color": "#1f7a4f",
   "icons": [
     {
-      "src": "assets/macs-logo.jpg",
-      "sizes": "512x512",
-      "type": "image/jpeg",
+      "src": "assets/macs-logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],

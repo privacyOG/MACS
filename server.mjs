@@ -56,6 +56,7 @@ const maxSessionTimeoutMinutes = 240;
 const loginRateLimitWindowMs = 15 * 60 * 1000; // 15 minutes
 const loginRateLimitMaxAttempts = 20;
 const loginAttemptMap = new Map();
+const loginChallengeMap = new Map();
 
 function checkLoginRateLimit(ip) {
   const now = Date.now();

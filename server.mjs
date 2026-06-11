@@ -52,6 +52,34 @@ const notificationFromEmail = process.env.NOTIFICATION_FROM_EMAIL || "security@m
 const maxFailedLogins = 4;
 const defaultSessionTimeoutMinutes = 30;
 const maxSessionTimeoutMinutes = 240;
+
+const loginRateLimitWindowMs = 15 * 60 * 1000; // 15 minutes
+const loginRateLimitMaxAttempts = 20;
+const loginAttemptMap = new Map();
+
+function checkLoginRateLimit(ip) {
+  const now = Date.now();
+  const record = loginAttemptMap.get(ip);
+  if (record && (now - record.firstAttempt) < loginRateLimitWindowMs) {
+    if (record.count >= loginRateLimitMaxAttempts) return false;
+    record.count += 1;
+  } else {
+    loginAttemptMap.set(ip, { count: 1, firstAttempt: now });
+  }
+  return true;
+}
+
+function clearLoginRateLimit(ip) {
+  loginAttemptMap.delete(ip);
+}
+
+function passwordCredential(body, field = "password") {
+  const hashField = field === "password" ? "passwordHash" : `${field}Hash`;
+  const hashed = String(body?.[hashField] || "");
+  if (/^[a-f0-9]{64}$/i.test(hashed)) return hashed.toLowerCase();
+  return String(body?.[field] || "");
+}
+
 const sessions = new Map();
 const roles = {
   owner: "Owner Admin",
@@ -1273,18 +1301,29 @@ async function handleAuth(req, res, url) {
 
   if (req.method === "GET" && url.pathname === "/api/auth/status") {
     const auth = currentUser(admin, req);
+
+    // FIX #1: Minimize info disclosure when not logged in
+    if (!auth) {
+      sendJson(res, 200, {
+        configured: admin.users.length > 0,
+        loggedIn: false
+      });
+      return true;
+    }
+
+    // Logged-in users get full status
     sendJson(res, 200, {
       configured: admin.users.length > 0,
-      loggedIn: Boolean(auth),
-      twoFactorEnabled: Boolean(auth?.user.twoFactorEnabled),
+      loggedIn: true,
+      twoFactorEnabled: Boolean(auth.user.twoFactorEnabled),
       updatedAt: admin.updatedAt || null,
-      user: auth ? publicUser(auth.user) : null,
+      user: publicUser(auth.user),
       security: {
         sessionTimeoutMinutes: sessionTimeoutMinutes(admin),
         maxSessionTimeoutMinutes,
         ...fieldSecuritySettings(admin)
       },
-      storage: auth && ["owner", "leader"].includes(auth.user.role) ? postgresStatus() : null,
+      storage: ["owner", "leader"].includes(auth.user.role) ? postgresStatus() : null,
       roles
     });
     return true;
@@ -1320,9 +1359,10 @@ async function handleAuth(req, res, url) {
       return true;
     }
     const body = await readJsonBody(req);
+    const password = passwordCredential(body);
     const username = normaliseIdentifier(body.username);
     const email = normaliseIdentifier(body.email);
-    if (!body.password || body.password.length < 8) {
+    if (!password) {
       sendJson(res, 400, { ok: false, message: "Use at least 8 characters for the admin password." });
       return true;
     }
@@ -1338,7 +1378,8 @@ async function handleAuth(req, res, url) {
       email,
       role: "owner",
       salt,
-      passwordHash: hashSecret(body.password, salt),
+      passwordHash: hashSecret(password, salt),
+      passwordScheme: "client-sha256",
       recoveryHash: hashSecret(nextRecoveryCode, salt),
       twoFactorEnabled: false,
       twoFactorSecret: "",
@@ -1360,6 +1401,16 @@ async function handleAuth(req, res, url) {
   }
 
   if (req.method === "POST" && url.pathname === "/api/auth/login") {
+    const ip = clientIp(req);
+    if (!checkLoginRateLimit(ip)) {
+      await auditSecurityEvent(req, null, "login_rate_limited", { ip }, { windowMs: loginRateLimitWindowMs, maxAttempts: loginRateLimitMaxAttempts });
+      sendJson(res, 429, {
+        ok: false,
+        message: "Too many login attempts. Please try again later."
+      });
+      return true;
+    }
+
     const body = await readJsonBody(req);
     const identifier = normaliseIdentifier(body.identifier || body.email || body.username);
     const user = admin.users.find((item) => item.email === identifier || item.username === identifier);
@@ -1367,6 +1418,9 @@ async function handleAuth(req, res, url) {
       sendJson(res, 401, { ok: false, message: "Incorrect password." });
       return true;
     }
+
+    const password = passwordCredential(body);
+
     if (!isApproved(user)) {
       sendJson(res, 403, { ok: false, message: "This login is waiting for Owner Admin approval." });
       return true;
@@ -1375,33 +1429,46 @@ async function handleAuth(req, res, url) {
       sendJson(res, 423, { ok: false, message: "This account is locked after too many failed login attempts. Owner Admin must unlock it." });
       return true;
     }
-    if (!verifySecret(body.password || "", user.salt, user.passwordHash)) {
-      recordFailedLogin(user);
-      admin.updatedAt = new Date().toISOString();
-      await writeAdmin(admin);
-      await auditSecurityEvent(req, null, "failed_login_attempt", { id: user.id, username: user.username, email: user.email, role: user.role }, { reason: "failed_password", attempts: user.failedLoginCount, bruteForceThreshold: maxFailedLogins });
-      if (isLocked(user)) {
-        await auditSecurityEvent(req, null, "account_locked", { id: user.id, username: user.username, email: user.email, role: user.role }, { reason: "failed_password", attempts: user.failedLoginCount });
-        await notifyOwnerSecurityEvent(`MACS account locked: ${user.username}`, [
-          `A MACS login was locked after ${maxFailedLogins} failed password attempts.`,
-          ``,
-          `Username: ${user.username}`,
-          `Email: ${user.email}`,
-          `Role: ${roles[user.role] || user.role}`,
-          `IP: ${clientIp(req)}`,
-          `Time: ${new Date().toISOString()}`,
-          ``,
-          `Owner Admin must unlock this account before it can sign in again.`
-        ].join("\n"));
+    if (!verifySecret(password, user.salt, user.passwordHash)) {
+      if (!user.passwordScheme && body.passwordHash && !body.migrateLegacyPassword) {
+        sendJson(res, 409, {
+          ok: false,
+          legacyMigrationRequired: true,
+          message: "This account needs a one-time password security upgrade."
+        });
+        return true;
       }
-      const remaining = Math.max(0, maxFailedLogins - Number(user.failedLoginCount || 0));
-      sendJson(res, 401, {
-        ok: false,
-        message: isLocked(user)
-          ? "Account locked after 4 failed login attempts. Owner Admin must unlock it."
-          : `Incorrect password. ${remaining} ${remaining === 1 ? "try" : "tries"} remaining before lockout.`
-      });
-      return true;
+      if (!user.passwordScheme && body.migrateLegacyPassword && body.passwordHash && verifySecret(body.password || "", user.salt, user.passwordHash)) {
+        user.passwordHash = hashSecret(String(body.passwordHash).toLowerCase(), user.salt);
+        user.passwordScheme = "client-sha256";
+      } else {
+        recordFailedLogin(user);
+        admin.updatedAt = new Date().toISOString();
+        await writeAdmin(admin);
+        await auditSecurityEvent(req, null, "failed_login_attempt", { id: user.id, username: user.username, email: user.email, role: user.role }, { reason: "failed_password", attempts: user.failedLoginCount, bruteForceThreshold: maxFailedLogins });
+        if (isLocked(user)) {
+          await auditSecurityEvent(req, null, "account_locked", { id: user.id, username: user.username, email: user.email, role: user.role }, { reason: "failed_password", attempts: user.failedLoginCount });
+          await notifyOwnerSecurityEvent(`MACS account locked: ${user.username}`, [
+            `A MACS login was locked after ${maxFailedLogins} failed password attempts.`,
+            ``,
+            `Username: ${user.username}`,
+            `Email: ${user.email}`,
+            `Role: ${roles[user.role] || user.role}`,
+            `IP: ${clientIp(req)}`,
+            `Time: ${new Date().toISOString()}`,
+            ``,
+            `Owner Admin must unlock this account before it can sign in again.`
+          ].join("\n"));
+        }
+        const remaining = Math.max(0, maxFailedLogins - Number(user.failedLoginCount || 0));
+        sendJson(res, 401, {
+          ok: false,
+          message: isLocked(user)
+            ? "Account locked after 4 failed login attempts. Owner Admin must unlock it."
+            : `Incorrect password. ${remaining} ${remaining === 1 ? "try" : "tries"} remaining before lockout.`
+        });
+        return true;
+      }
     }
     const legacy2faOk = user.legacyTwoFactorHash && verifySecret(body.twoFactorCode || "", user.salt, user.legacyTwoFactorHash);
     const totpOk = user.twoFactorSecret && verifyTotp(user.twoFactorSecret, body.twoFactorCode);
@@ -1434,6 +1501,7 @@ async function handleAuth(req, res, url) {
       return true;
     }
     resetFailedLogins(user);
+    clearLoginRateLimit(ip);
     admin.updatedAt = new Date().toISOString();
     await writeAdmin(admin);
     const sessionId = randomUUID();
@@ -1513,15 +1581,18 @@ async function handleAuth(req, res, url) {
     const auth = requireUser(admin, req, res);
     if (!auth) return true;
     const body = await readJsonBody(req);
-    if (!verifySecret(body.currentPassword || "", auth.user.salt, auth.user.passwordHash)) {
+    const currentPassword = passwordCredential(body, "currentPassword");
+    const nextPassword = passwordCredential(body, "nextPassword");
+    if (!verifySecret(currentPassword, auth.user.salt, auth.user.passwordHash)) {
       sendJson(res, 401, { ok: false, message: "Current password is incorrect." });
       return true;
     }
-    if (!body.nextPassword || body.nextPassword.length < 8) {
+    if (!nextPassword) {
       sendJson(res, 400, { ok: false, message: "Use at least 8 characters for the new password." });
       return true;
     }
-    auth.user.passwordHash = hashSecret(body.nextPassword, auth.user.salt);
+    auth.user.passwordHash = hashSecret(nextPassword, auth.user.salt);
+    auth.user.passwordScheme = "client-sha256";
     auth.user.updatedAt = new Date().toISOString();
     admin.updatedAt = new Date().toISOString();
     await writeAdmin(admin);
@@ -1534,12 +1605,18 @@ async function handleAuth(req, res, url) {
     const body = await readJsonBody(req);
     const identifier = normaliseIdentifier(body.identifier || body.email || body.username);
     const user = admin.users.find((item) => item.email === identifier || item.username === identifier);
+    const nextPassword = passwordCredential(body, "nextPassword");
     if (!user || !verifySecret(body.recoveryCode || "", user.salt, user.recoveryHash)) {
       sendJson(res, 401, { ok: false, message: "Recovery code is incorrect." });
       return true;
     }
+    if (!nextPassword) {
+      sendJson(res, 400, { ok: false, message: "Use at least 8 characters for the new password." });
+      return true;
+    }
     const nextRecoveryCode = recoveryCode();
-    user.passwordHash = hashSecret(body.nextPassword || "", user.salt);
+    user.passwordHash = hashSecret(nextPassword, user.salt);
+    user.passwordScheme = "client-sha256";
     user.recoveryHash = hashSecret(nextRecoveryCode, user.salt);
     user.updatedAt = new Date().toISOString();
     admin.updatedAt = new Date().toISOString();
@@ -2279,6 +2356,7 @@ async function handleAuth(req, res, url) {
     const username = normaliseIdentifier(body.username);
     const email = normaliseIdentifier(body.email);
     const role = ["owner", "leader", "member"].includes(body.role) ? body.role : "member";
+    const password = passwordCredential(body);
     const profile = cleanEmployeeProfile({
       fullName: body.fullName,
       address: body.address,
@@ -2286,7 +2364,7 @@ async function handleAuth(req, res, url) {
       mobile: body.mobile,
       email
     }, { email });
-    if (!username || !email.includes("@") || !body.password || body.password.length < 8) {
+    if (!username || !email.includes("@") || !password) {
       sendJson(res, 400, { ok: false, message: "Enter username, email, role, and an 8+ character password." });
       return true;
     }
@@ -2302,7 +2380,8 @@ async function handleAuth(req, res, url) {
       email,
       role,
       salt,
-      passwordHash: hashSecret(body.password, salt),
+      passwordHash: hashSecret(password, salt),
+      passwordScheme: "client-sha256",
       recoveryHash: hashSecret(nextRecoveryCode, salt),
       twoFactorEnabled: false,
       twoFactorSecret: "",

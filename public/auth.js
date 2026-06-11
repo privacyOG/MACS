@@ -25,6 +25,12 @@ async function api(path, body) {
   }
 }
 
+async function passwordHash(password) {
+  const bytes = new TextEncoder().encode(String(password || ""));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 let inactivityTimer = null;
 let inactivityBound = false;
 let inactivityMinutes = 30;
@@ -131,19 +137,29 @@ export async function resetAndroidAppSession() {
 }
 
 export async function setupAdmin(password, twoFactorCode = "") {
-  const result = await api("/api/auth/setup", { password, twoFactorCode });
+  const result = await api("/api/auth/setup", { passwordHash: await passwordHash(password), twoFactorCode });
   if (!result.ok && result.message) throw new Error(result.message);
   return result.recoveryCode;
 }
 
 export async function createOwnerAccount({ username, email, password }) {
-  const result = await api("/api/auth/setup", { username, email, password });
+  const result = await api("/api/auth/setup", { username, email, passwordHash: await passwordHash(password) });
   if (!result.ok && result.message) throw new Error(result.message);
   return result;
 }
 
 export async function loginAdmin(identifier, password, twoFactorCode = "") {
-  return api("/api/auth/login", { identifier, password, twoFactorCode, ...browserContext() });
+  const hashed = await passwordHash(password);
+  const result = await api("/api/auth/login", { identifier, passwordHash: hashed, twoFactorCode, ...browserContext() });
+  if (!result.legacyMigrationRequired) return result;
+  return api("/api/auth/login", {
+    identifier,
+    password,
+    passwordHash: hashed,
+    migrateLegacyPassword: true,
+    twoFactorCode,
+    ...browserContext()
+  });
 }
 
 export async function updateSessionLocation(location = {}) {
@@ -223,11 +239,14 @@ export async function createEncryptedBackup() {
 }
 
 export async function changePassword(currentPassword, nextPassword) {
-  return api("/api/auth/change-password", { currentPassword, nextPassword });
+  return api("/api/auth/change-password", {
+    currentPasswordHash: await passwordHash(currentPassword),
+    nextPasswordHash: await passwordHash(nextPassword)
+  });
 }
 
 export async function recoverPassword(identifier, recoveryCode, nextPassword) {
-  return api("/api/auth/recover", { identifier, recoveryCode, nextPassword });
+  return api("/api/auth/recover", { identifier, recoveryCode, nextPasswordHash: await passwordHash(nextPassword) });
 }
 
 export async function getTwoFactorSetup() {
@@ -243,7 +262,12 @@ export async function listTeamMembers() {
 }
 
 export async function createTeamMember(payload) {
-  return api("/api/team", payload);
+  const password = payload.password;
+  return api("/api/team", {
+    ...payload,
+    password: undefined,
+    passwordHash: await passwordHash(password)
+  });
 }
 
 export async function updateTeamMember(id, role) {

@@ -1329,6 +1329,14 @@ async function handleAuth(req, res, url) {
     return true;
   }
 
+  // FIX #3: Challenge endpoint for client-side password hashing (challenge-response)
+  if (req.method === "POST" && url.pathname === "/api/auth/challenge") {
+    const nonce = randomBytes(16).toString("hex");
+    loginChallengeMap.set(nonce, { ip: clientIp(req), createdAt: Date.now() });
+    sendJson(res, 200, { ok: true, nonce });
+    return true;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/health/storage") {
     const auth = requireRosterManager(admin, req, res);
     if (!auth) return true;

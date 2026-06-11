@@ -1512,9 +1512,10 @@ async function handleAuth(req, res, url) {
         return true;
       }
     }
+    // Team members are never forced to use 2FA — skip the check entirely for role "member"
     const legacy2faOk = user.legacyTwoFactorHash && verifySecret(body.twoFactorCode || "", user.salt, user.legacyTwoFactorHash);
     const totpOk = user.twoFactorSecret && verifyTotp(user.twoFactorSecret, body.twoFactorCode);
-    if (user.twoFactorEnabled && !legacy2faOk && !totpOk) {
+    if (user.role !== "member" && user.twoFactorEnabled && !legacy2faOk && !totpOk) {
       recordFailedLogin(user);
       admin.updatedAt = new Date().toISOString();
       await writeAdmin(admin);

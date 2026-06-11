@@ -58,6 +58,17 @@ const loginRateLimitMaxAttempts = 20;
 const loginAttemptMap = new Map();
 const loginChallengeMap = new Map();
 
+// --- Security headers (Fix #4) ---
+const securityHeaders = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(self), payment=()"
+};
+// --- end security headers ---
+
 function checkLoginRateLimit(ip) {
   const now = Date.now();
   const record = loginAttemptMap.get(ip);
@@ -1039,6 +1050,16 @@ function requireUser(admin, req, res) {
     sendJson(res, 401, { ok: false, message: "Login required." });
     return null;
   }
+  const pathname = new URL(req.url || "/", "http://localhost").pathname;
+  const setupAllowed = ["/api/auth/status", "/api/auth/logout", "/api/auth/2fa/setup", "/api/auth/2fa"].includes(pathname);
+  if (auth.session.twoFactorSetupRequired && !setupAllowed) {
+    sendJson(res, 403, {
+      ok: false,
+      twoFactorSetupRequired: true,
+      message: "Authenticator app 2FA must be enabled before using this account."
+    });
+    return null;
+  }
   return auth;
 }
 
@@ -1262,6 +1283,7 @@ function sendJson(res, statusCode, body, headers = {}) {
     "Content-Type": "application/json; charset=utf-8",
     "Content-Length": Buffer.byteLength(content),
     "Cache-Control": "no-store",
+    ...securityHeaders,
     ...headers
   });
   res.end(content);
@@ -1286,12 +1308,12 @@ async function sendFile(res, filePath) {
   const headers = {};
   if (extension === ".apk") {
     headers["Content-Disposition"] = `attachment; filename="${path.basename(filePath)}"`;
-    headers["X-Content-Type-Options"] = "nosniff";
   }
   res.writeHead(200, {
     "Content-Type": type,
     "Content-Length": fileStat.size,
     "Cache-Control": filePath.endsWith(".html") ? "no-store" : "public, max-age=300",
+    ...securityHeaders,
     ...headers
   });
   createReadStream(filePath).pipe(res);
@@ -1317,6 +1339,7 @@ async function handleAuth(req, res, url) {
       configured: admin.users.length > 0,
       loggedIn: true,
       twoFactorEnabled: Boolean(auth.user.twoFactorEnabled),
+      twoFactorSetupRequired: Boolean(auth.session.twoFactorSetupRequired),
       updatedAt: admin.updatedAt || null,
       user: publicUser(auth.user),
       security: {
@@ -1511,12 +1534,14 @@ async function handleAuth(req, res, url) {
     }
     resetFailedLogins(user);
     clearLoginRateLimit(ip);
+
     admin.updatedAt = new Date().toISOString();
     await writeAdmin(admin);
     const sessionId = randomUUID();
     const timeoutMinutes = sessionTimeoutMinutes(admin);
     const timeoutMs = sessionTimeoutMs(admin);
     const login = await recordLogin(req, user, sessionId, body, timeoutMinutes);
+    const twoFactorSetupRequired = ["owner", "leader"].includes(user.role) && !user.twoFactorEnabled;
     sessions.set(sessionId, {
       userId: user.id,
       role: user.role,
@@ -1524,8 +1549,12 @@ async function handleAuth(req, res, url) {
       loginAt: Date.now(),
       lastSeenAt: Date.now(),
       timeoutMs,
-      expiresAt: Date.now() + timeoutMs
+      expiresAt: Date.now() + timeoutMs,
+      twoFactorSetupRequired
     });
+    if (twoFactorSetupRequired) {
+      await auditSecurityEvent(req, user, "two_factor_setup_required", { id: user.id, username: user.username, email: user.email, role: user.role }, {});
+    }
     await auditSecurityEvent(req, user, user.role === "owner" ? "owner_login_success" : "login_success", { id: user.id, username: user.username, email: user.email, role: user.role }, { riskLevel: login.riskLevel, riskSignals: login.riskSignals });
     if (user.role === "owner") {
       await notifyOwnerSecurityEvent(`MACS Owner Admin login: ${user.username}`, [
@@ -1538,7 +1567,12 @@ async function handleAuth(req, res, url) {
         `Time: ${new Date().toISOString()}`
       ].join("\n"));
     }
-    sendJson(res, 200, { ok: true, user: publicUser(user) }, {
+    sendJson(res, 200, {
+      ok: true,
+      user: publicUser(user),
+      twoFactorSetupRequired,
+      message: twoFactorSetupRequired ? "Authenticator app 2FA must be enabled before using this account." : undefined
+    }, {
       "Set-Cookie": `macs_admin_session=${encodeURIComponent(sessionId)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxSessionTimeoutMinutes * 60}`
     });
     return true;
@@ -1659,7 +1693,12 @@ async function handleAuth(req, res, url) {
       auth.user.twoFactorEnabled = true;
       auth.user.twoFactorSecret = secret;
       delete auth.user.legacyTwoFactorHash;
+      auth.session.twoFactorSetupRequired = false;
     } else {
+      if (["owner", "leader"].includes(auth.user.role)) {
+        sendJson(res, 400, { ok: false, message: "Owner Admin and Team Leader accounts must keep 2FA enabled." });
+        return true;
+      }
       auth.user.twoFactorEnabled = false;
       auth.user.twoFactorSecret = "";
       delete auth.user.legacyTwoFactorHash;

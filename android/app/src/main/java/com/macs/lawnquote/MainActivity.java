@@ -2,20 +2,18 @@ package com.macs.lawnquote;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Base64;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
-import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -24,10 +22,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceError;
-import androidx.core.content.FileProvider;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.Locale;
+import android.webkit.SslErrorHandler;
 
 public class MainActivity extends Activity {
     private static final String APP_URL = "https://macs.rctrusts.com/crew.html";
@@ -60,8 +55,11 @@ public class MainActivity extends Activity {
         root.setOnApplyWindowInsetsListener((view, insets) -> {
             int top = statusBarInset(insets);
             int bottom = navigationBarInset(insets);
-            view.setPadding(0, top, 0, bottom);
-            webView.setPadding(0, 0, 0, 0);
+            view.setPadding(0, top, 0, 0);
+            webView.evaluateJavascript(
+                "(function(){document.documentElement.style.setProperty('--android-nav-inset','" + bottom + "px');})()",
+                null
+            );
             return insets;
         });
         root.requestApplyInsets();
@@ -73,7 +71,9 @@ public class MainActivity extends Activity {
         settings.setGeolocationEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setUserAgentString(settings.getUserAgentString() + " MACS-LawnQuote-Android/" + appVersionName());
-        webView.addJavascriptInterface(new AndroidBridge(), "MacsAndroid");
+        settings.setAllowFileAccess(false);
+        settings.setAllowContentAccess(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -91,6 +91,12 @@ public class MainActivity extends Activity {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && request.isForMainFrame()) {
                     showOfflineScreen();
                 }
+            }
+
+            @Override
+            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                handler.cancel();
+                showOfflineScreen();
             }
 
             @Override
@@ -158,6 +164,12 @@ public class MainActivity extends Activity {
             }
             if (!path.endsWith("/crew.html")
                 && !path.endsWith("/schedule.html")
+                && !path.endsWith("/customers.html")
+                && !path.endsWith("/invoices.html")
+                && !path.endsWith("/reports.html")
+                && !path.endsWith("/security.html")
+                && !path.endsWith("/quote.html")
+                && !path.endsWith("/index.html")
                 && !path.endsWith("/profile.html")
                 && !path.endsWith("/more.html")
                 && !path.endsWith("/downloads.html")
@@ -175,42 +187,6 @@ public class MainActivity extends Activity {
             startActivity(intent);
         } catch (Exception ignored) {
         }
-    }
-
-    private void openExternalFile(Uri uri, String mimeType, String filename) {
-        try {
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(uri, safeMimeType(mimeType, filename));
-            intent.setClipData(ClipData.newUri(getContentResolver(), filename, uri));
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            Intent chooser = Intent.createChooser(intent, "Open credential");
-            chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(chooser);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private String safeMimeType(String mimeType, String filename) {
-        String value = mimeType == null ? "" : mimeType.trim();
-        if (!value.isEmpty() && !"file".equalsIgnoreCase(value)) return value;
-        String lower = filename == null ? "" : filename.toLowerCase(Locale.ROOT);
-        if (lower.endsWith(".pdf")) return "application/pdf";
-        if (lower.endsWith(".png")) return "image/png";
-        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
-        if (lower.endsWith(".webp")) return "image/webp";
-        return "application/octet-stream";
-    }
-
-    private String safeFilename(String filename, String mimeType) {
-        String cleaned = filename == null ? "" : filename.replaceAll("[^A-Za-z0-9._-]", "_");
-        if (cleaned.isEmpty()) cleaned = "credential";
-        if (cleaned.contains(".")) return cleaned;
-        String type = safeMimeType(mimeType, cleaned);
-        if ("application/pdf".equals(type)) return cleaned + ".pdf";
-        if ("image/png".equals(type)) return cleaned + ".png";
-        if ("image/webp".equals(type)) return cleaned + ".webp";
-        if ("image/jpeg".equals(type)) return cleaned + ".jpg";
-        return cleaned + ".bin";
     }
 
     private void clearWebSession() {
@@ -231,44 +207,6 @@ public class MainActivity extends Activity {
             webView.clearHistory();
             webView.clearSslPreferences();
         } catch (Exception ignored) {
-        }
-    }
-
-    public class AndroidBridge {
-        @JavascriptInterface
-        public void logoutToLogin() {
-            runOnUiThread(() -> {
-                clearWebSession();
-                webView.loadUrl(LOGIN_URL + "?logout=1&android=1&t=" + System.currentTimeMillis());
-            });
-        }
-
-        @JavascriptInterface
-        public void resetAppData() {
-            runOnUiThread(() -> {
-                clearWebSession();
-                webView.loadUrl(LOGIN_URL + "?logout=1&reset=1&android=1&t=" + System.currentTimeMillis());
-            });
-        }
-
-        @JavascriptInterface
-        public void openCredential(String dataUrl, String filename, String mimeType) {
-            if (dataUrl == null || !dataUrl.startsWith("data:")) return;
-            int comma = dataUrl.indexOf(',');
-            if (comma < 0) return;
-            try {
-                String encoded = dataUrl.substring(comma + 1);
-                byte[] bytes = Base64.decode(encoded, Base64.DEFAULT);
-                File directory = new File(getCacheDir(), "credentials");
-                if (!directory.exists() && !directory.mkdirs()) return;
-                File output = new File(directory, safeFilename(filename, mimeType));
-                try (FileOutputStream stream = new FileOutputStream(output)) {
-                    stream.write(bytes);
-                }
-                Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".files", output);
-                runOnUiThread(() -> openExternalFile(uri, mimeType, output.getName()));
-            } catch (Exception ignored) {
-            }
         }
     }
 

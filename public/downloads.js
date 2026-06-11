@@ -1,3 +1,1 @@
-import { initAccessibleNavigation } from "./auth.js";
-
-initAccessibleNavigation();
+import{initAccessibleNavigation as m}from"./auth.js";m();

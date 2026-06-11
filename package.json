@@ -8,9 +8,13 @@
     "db:check": "node scripts/check-postgres.mjs",
     "db:migrate": "node scripts/migrate-json-to-postgres.mjs",
     "start": "node server.mjs",
-    "test": "node scripts/smoke-test.mjs"
+    "test": "node scripts/smoke-test.mjs",
+    "build": "node scripts/minify-public.mjs"
   },
   "dependencies": {
     "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "terser": "^5.48.0"
   }
 }

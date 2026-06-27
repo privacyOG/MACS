@@ -1303,6 +1303,13 @@ function safeJoin(base, requestPath) {
 
 async function sendFile(res, filePath) {
   const fileStat = await stat(filePath);
+
+  if (fileStat.isDirectory()) {
+    res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Forbidden");
+    return;
+  }
+
   const extension = path.extname(filePath);
   const type = mimeTypes.get(extension) || "application/octet-stream";
   const headers = {};

@@ -3,8 +3,8 @@
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="false">macs.rctrusts.com</domain>
         <pin-set expiration="2028-09-02">
+            <pin digest="SHA-256">K1O+qCbH/xBB4zJREVImrWON1TCIz1bjTSr2v0bnBcg=</pin>
             <pin digest="SHA-256">s/tdAOmUzd8syaTuqfgGvFcn6DzA5Cmb+Vby1ST+U3Y=</pin>
-            <pin digest="SHA-256">sCkq5UWXjg+7mKu9lMhhYF5bGLsy7VI/UNW3tccdR7w=</pin>
         </pin-set>
     </domain-config>
 </network-security-config>

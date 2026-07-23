@@ -80,7 +80,7 @@ jobs:
           target: default
           profile: pixel_2
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: |
             set -eu
             adb install -r /tmp/tb/runtime/TowerBreaker-1.0.1-fixed.apk
@@ -89,6 +89,10 @@ jobs:
             adb shell monkey -p com.privacyog.towerbreaker.debug -c android.intent.category.LAUNCHER 1
             sleep 6
             adb shell pidof com.privacyog.towerbreaker.debug
+            adb shell dumpsys activity activities > /tmp/tb/runtime/activity-title-api29.txt
+            adb shell dumpsys window windows > /tmp/tb/runtime/window-title-api29.txt
+            adb shell dumpsys SurfaceFlinger --list > /tmp/tb/runtime/surface-list-api29.txt || true
+            adb logcat -d > /tmp/tb/runtime/logcat-title-api29.txt
             adb exec-out screencap -p > /tmp/tb/runtime/title-api29.png
             python3 /tmp/tb/project/scripts/check_screenshot.py /tmp/tb/runtime/title-api29.png
             DIMS=$(python3 -c "import struct; d=open('/tmp/tb/runtime/title-api29.png','rb').read(24); print(*struct.unpack('>II', d[16:24]))")
@@ -96,6 +100,9 @@ jobs:
             adb shell input tap $(( $1 / 2 )) $(( $2 * 65 / 100 ))
             sleep 3
             adb shell pidof com.privacyog.towerbreaker.debug
+            adb shell dumpsys activity activities > /tmp/tb/runtime/activity-gameplay-api29.txt
+            adb shell dumpsys window windows > /tmp/tb/runtime/window-gameplay-api29.txt
+            adb logcat -d > /tmp/tb/runtime/logcat-api29.txt
             adb exec-out screencap -p > /tmp/tb/runtime/gameplay-api29.png
             python3 /tmp/tb/project/scripts/check_screenshot.py /tmp/tb/runtime/gameplay-api29.png
             python3 - <<'PY'
@@ -125,7 +132,6 @@ jobs:
             if ratio < 0.08 or mean < 8.0:
                 raise SystemExit('Start interaction did not produce a distinct gameplay screen')
             PY
-            adb logcat -d > /tmp/tb/runtime/logcat-api29.txt
             ! grep -E 'FATAL EXCEPTION|AndroidRuntime.*Process: com\.privacyog\.towerbreaker\.debug' /tmp/tb/runtime/logcat-api29.txt
 
       - name: Record smoke-test verification
@@ -136,6 +142,7 @@ jobs:
           {
             echo 'RESULT=PASS'
             echo 'RUNTIME=Android 10 API 29 x86_64 emulator'
+            echo 'GPU=swiftshader'
             echo "SHA256=$(sha256sum "$APK" | awk '{print $1}')"
             echo 'TITLE_SCREEN=NON_BLACK'
             echo 'GAMEPLAY_SCREEN=NON_BLACK_AND_DISTINCT'

@@ -1,0 +1,173 @@
+name: Tower Breaker runtime fix
+
+on:
+  push:
+    branches: [tower-breaker-runtime-fix]
+    paths-ignore:
+      - 'towerbreaker-output/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-test-export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Check out isolated branch
+        uses: actions/checkout@v4
+
+      - name: Reconstruct Tower Breaker source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          rm -rf /tmp/towerbreaker-fix
+          mkdir -p /tmp/towerbreaker-fix/parts /tmp/towerbreaker-fix/project
+          for n in 00 01 02 03 04; do
+            curl -fsSL "https://raw.githubusercontent.com/privacyOG/kivy-python-for-android/tower-breaker-fix-ci/towerbreaker-ci/parts/part${n}" \
+              -o "/tmp/towerbreaker-fix/parts/part${n}"
+          done
+          cat /tmp/towerbreaker-fix/parts/part* | tr -d '\n\r' | base64 --decode > /tmp/towerbreaker-fix/project.zip
+          unzip -tq /tmp/towerbreaker-fix/project.zip
+          unzip -q /tmp/towerbreaker-fix/project.zip -d /tmp/towerbreaker-fix/project
+
+      - name: Apply final attachment-safe renderer patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('/tmp/towerbreaker-fix/project/app/src/main/java/com/privacyog/towerbreaker/GameView.java')
+          source = path.read_text()
+          old_resume = '''    public void resumeLoop() {
+                  if (running) return;
+                  running = true;
+                  previousNanos = System.nanoTime();
+                  removeCallbacks(frameRunnable);
+                  post(frameRunnable);
+                  invalidate();
+              }
+          '''
+          new_resume = '''    public void resumeLoop() {
+                  if (running) return;
+                  if (!isAttachedToWindow()) {
+                      running = false;
+                      return;
+                  }
+                  running = true;
+                  previousNanos = System.nanoTime();
+                  removeCallbacks(frameRunnable);
+                  postOnAnimation(frameRunnable);
+                  invalidate();
+              }
+          '''
+          if old_resume not in source:
+              raise SystemExit('Expected resumeLoop source was not found')
+          source = source.replace(old_resume, new_resume)
+          old_guard = '            if (!running || !isAttachedToWindow()) return;\n'
+          new_guard = '''            if (!running) return;
+                      if (!isAttachedToWindow()) {
+                          running = false;
+                          return;
+                      }
+          '''
+          if old_guard not in source:
+              raise SystemExit('Expected frame guard was not found')
+          source = source.replace(old_guard, new_guard)
+          path.write_text(source)
+          PY
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install API 36 build components
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Compile fixed APK
+        working-directory: /tmp/towerbreaker-fix/project
+        run: gradle --no-daemon --stacktrace clean assembleDebug
+
+      - name: Prepare test APK
+        shell: bash
+        run: |
+          mkdir -p /tmp/towerbreaker-fix/runtime
+          cp /tmp/towerbreaker-fix/project/app/build/outputs/apk/debug/app-debug.apk \
+             /tmp/towerbreaker-fix/runtime/TowerBreaker-1.0.1-fixed.apk
+
+      - name: Install, launch and reject blank screens
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -euxo pipefail
+            adb install -r /tmp/towerbreaker-fix/runtime/TowerBreaker-1.0.1-fixed.apk
+            adb logcat -c
+            adb shell am force-stop com.privacyog.towerbreaker.debug
+            adb shell monkey -p com.privacyog.towerbreaker.debug -c android.intent.category.LAUNCHER 1
+            sleep 7
+            adb shell pidof com.privacyog.towerbreaker.debug
+            adb exec-out screencap -p > /tmp/towerbreaker-fix/runtime/title.png
+            python3 /tmp/towerbreaker-fix/project/scripts/check_screenshot.py /tmp/towerbreaker-fix/runtime/title.png
+            adb shell input tap 1200 650
+            sleep 4
+            adb shell pidof com.privacyog.towerbreaker.debug
+            adb exec-out screencap -p > /tmp/towerbreaker-fix/runtime/gameplay.png
+            python3 /tmp/towerbreaker-fix/project/scripts/check_screenshot.py /tmp/towerbreaker-fix/runtime/gameplay.png
+            adb logcat -d > /tmp/towerbreaker-fix/runtime/logcat.txt
+            if grep -E 'FATAL EXCEPTION|AndroidRuntime.*Process: com\.privacyog\.towerbreaker\.debug' /tmp/towerbreaker-fix/runtime/logcat.txt; then
+              echo 'Runtime crash found in logcat' >&2
+              exit 3
+            fi
+
+      - name: Export verified APK as repository-safe chunks
+        shell: bash
+        run: |
+          set -euxo pipefail
+          rm -rf towerbreaker-output
+          mkdir -p towerbreaker-output/apk-parts
+          APK=/tmp/towerbreaker-fix/runtime/TowerBreaker-1.0.1-fixed.apk
+          SHA=$(sha256sum "$APK" | awk '{print $1}')
+          SIZE=$(stat -c '%s' "$APK")
+          base64 -w0 "$APK" | split -b 45000 -d -a 3 - towerbreaker-output/apk-parts/part-
+          cp /tmp/towerbreaker-fix/runtime/logcat.txt towerbreaker-output/logcat.txt
+          cat > towerbreaker-output/verification.txt <<EOF
+          Tower Breaker 1.0.1 fixed runtime verification
+          Package: com.privacyog.towerbreaker.debug
+          APK SHA-256: $SHA
+          APK bytes: $SIZE
+          Build: Android API 36, Build Tools 36.0.0, Java 17
+          Runtime test: Android API 35 x86_64 Pixel 6 emulator
+          Title screen: visible and non-black
+          Gameplay screen: visible and non-black
+          Process remained alive after launch and interaction
+          Fatal AndroidRuntime exception scan: clear
+          EOF
+
+      - name: Commit verified output
+        shell: bash
+        run: |
+          git config user.name privacyOG
+          git config user.email privacyog@users.noreply.github.com
+          git add towerbreaker-output
+          git commit -m 'build: export emulator-verified Tower Breaker 1.0.1 APK'
+          git push origin HEAD:tower-breaker-runtime-fix

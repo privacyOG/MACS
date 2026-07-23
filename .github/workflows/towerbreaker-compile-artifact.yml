@@ -1,0 +1,94 @@
+name: Tower Breaker corrected APK artifact
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'towerbreaker-compile-trigger/**'
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reconstruct corrected source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/tb/parts /tmp/tb/project /tmp/tb/output
+          for n in 00 01 02 03 04; do
+            curl -fsSL "https://raw.githubusercontent.com/privacyOG/kivy-python-for-android/tower-breaker-fix-ci/towerbreaker-ci/parts/part${n}" -o "/tmp/tb/parts/part${n}"
+          done
+          cat /tmp/tb/parts/part* | tr -d '\n\r' | base64 --decode > /tmp/tb/project.zip
+          unzip -tq /tmp/tb/project.zip
+          unzip -q /tmp/tb/project.zip -d /tmp/tb/project
+
+      - name: Apply final renderer safeguards
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/tb/project/app/src/main/java/com/privacyog/towerbreaker/GameView.java')
+          s = p.read_text()
+          s = s.replace(
+              "        if (running) return;\n        running = true;\n        previousNanos = System.nanoTime();\n        removeCallbacks(frameRunnable);\n        post(frameRunnable);\n        invalidate();",
+              "        if (running) return;\n        if (!isAttachedToWindow()) {\n            running = false;\n            return;\n        }\n        running = true;\n        previousNanos = System.nanoTime();\n        removeCallbacks(frameRunnable);\n        postOnAnimation(frameRunnable);\n        invalidate();"
+          )
+          s = s.replace(
+              "            if (!running || !isAttachedToWindow()) return;",
+              "            if (!running) return;\n            if (!isAttachedToWindow()) {\n                running = false;\n                return;\n            }"
+          )
+          for token in ('if (!isAttachedToWindow())', 'postOnAnimation(frameRunnable)', 'postOnAnimation(this)', 'protected void onAttachedToWindow()'):
+              if token not in s:
+                  raise SystemExit('Missing safeguard: ' + token)
+          p.write_text(s)
+          PY
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android API 36 components
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Compile and inspect APK
+        working-directory: /tmp/tb/project
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --stacktrace clean assembleDebug
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          cp "$APK" /tmp/tb/output/TowerBreaker-1.0.1-fixed.apk
+          unzip -tq "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" > /tmp/tb/output/aapt-badging.txt
+          {
+            echo 'RESULT=COMPILED'
+            echo "SHA256=$(sha256sum "$APK" | awk '{print $1}')"
+            echo "BYTES=$(stat -c '%s' "$APK")"
+            echo 'COMPILE_SDK=36'
+            echo 'TARGET_SDK=36'
+            echo 'MIN_SDK=26'
+          } > /tmp/tb/output/compile-verification.txt
+
+      - name: Upload corrected APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TowerBreaker-1.0.1-fixed-compiled
+          path: /tmp/tb/output/
+          if-no-files-found: error
+          retention-days: 14

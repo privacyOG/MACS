@@ -91,14 +91,40 @@ jobs:
             adb shell pidof com.privacyog.towerbreaker.debug
             adb exec-out screencap -p > /tmp/tb/runtime/title-api29.png
             python3 /tmp/tb/project/scripts/check_screenshot.py /tmp/tb/runtime/title-api29.png
-            SIZE=$(adb shell wm size | tail -1 | sed 's/.*: //' | tr -d '\r')
-            W=${SIZE%x*}
-            H=${SIZE#*x}
-            adb shell input tap $((W / 2)) $((H * 65 / 100))
+            DIMS=$(python3 -c "import struct; d=open('/tmp/tb/runtime/title-api29.png','rb').read(24); print(*struct.unpack('>II', d[16:24]))")
+            set -- $DIMS
+            adb shell input tap $(( $1 / 2 )) $(( $2 * 65 / 100 ))
             sleep 3
             adb shell pidof com.privacyog.towerbreaker.debug
             adb exec-out screencap -p > /tmp/tb/runtime/gameplay-api29.png
             python3 /tmp/tb/project/scripts/check_screenshot.py /tmp/tb/runtime/gameplay-api29.png
+            python3 - <<'PY'
+            import sys
+            sys.path.insert(0, '/tmp/tb/project/scripts')
+            from check_screenshot import read_png
+            from pathlib import Path
+            w1, h1, c1, a = read_png(Path('/tmp/tb/runtime/title-api29.png'))
+            w2, h2, c2, b = read_png(Path('/tmp/tb/runtime/gameplay-api29.png'))
+            if (w1, h1, c1) != (w2, h2, c2):
+                raise SystemExit('Screenshot formats differ')
+            step_x = max(1, w1 // 180)
+            step_y = max(1, h1 // 100)
+            changed = total = diff_sum = 0
+            stride = w1 * c1
+            for y in range(0, h1, step_y):
+                row = y * stride
+                for x in range(0, w1, step_x):
+                    i = row + x * c1
+                    d = abs(a[i]-b[i]) + abs(a[i+1]-b[i+1]) + abs(a[i+2]-b[i+2])
+                    diff_sum += d
+                    changed += d > 36
+                    total += 1
+            ratio = changed / max(1, total)
+            mean = diff_sum / max(1, total * 3)
+            print(f'title-to-gameplay change: ratio={ratio:.3f}, mean-channel-delta={mean:.2f}')
+            if ratio < 0.08 or mean < 8.0:
+                raise SystemExit('Start interaction did not produce a distinct gameplay screen')
+            PY
             adb logcat -d > /tmp/tb/runtime/logcat-api29.txt
             ! grep -E 'FATAL EXCEPTION|AndroidRuntime.*Process: com\.privacyog\.towerbreaker\.debug' /tmp/tb/runtime/logcat-api29.txt
 
@@ -112,7 +138,8 @@ jobs:
             echo 'RUNTIME=Android 10 API 29 x86_64 emulator'
             echo "SHA256=$(sha256sum "$APK" | awk '{print $1}')"
             echo 'TITLE_SCREEN=NON_BLACK'
-            echo 'GAMEPLAY_SCREEN=NON_BLACK'
+            echo 'GAMEPLAY_SCREEN=NON_BLACK_AND_DISTINCT'
+            echo 'PROCESS_ALIVE=YES'
             echo 'FATAL_LOGCAT=NONE'
           } > /tmp/tb/runtime/verification-api29.txt
 

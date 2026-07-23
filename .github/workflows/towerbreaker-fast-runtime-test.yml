@@ -82,7 +82,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: |
-            set -euxo pipefail
+            set -eu
             adb install -r /tmp/tb/runtime/TowerBreaker-1.0.1-fixed.apk
             adb logcat -c
             adb shell am force-stop com.privacyog.towerbreaker.debug
@@ -91,7 +91,10 @@ jobs:
             adb shell pidof com.privacyog.towerbreaker.debug
             adb exec-out screencap -p > /tmp/tb/runtime/title-api29.png
             python3 /tmp/tb/project/scripts/check_screenshot.py /tmp/tb/runtime/title-api29.png
-            adb shell input tap 900 500
+            SIZE=$(adb shell wm size | tail -1 | sed 's/.*: //' | tr -d '\r')
+            W=${SIZE%x*}
+            H=${SIZE#*x}
+            adb shell input tap $((W / 2)) $((H * 65 / 100))
             sleep 3
             adb shell pidof com.privacyog.towerbreaker.debug
             adb exec-out screencap -p > /tmp/tb/runtime/gameplay-api29.png

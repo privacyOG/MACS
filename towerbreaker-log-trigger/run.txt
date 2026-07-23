@@ -1,1 +1,1 @@
-Export emulator failure job log
+Export Tower Breaker black-screen launch job log
